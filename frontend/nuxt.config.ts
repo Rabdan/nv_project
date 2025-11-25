@@ -8,17 +8,17 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      n8nBaseUrl: process.env.NUXT_PUBLIC_N8N_BASE_URL || 'http://localhost:5678',
+      n8nBaseUrl: process.env.N8N_BASE_URL || 'http://localhost:5678',
       mode: process.env.NODE_ENV || 'development'
     }
   },
   nitro: {
     routeRules: {
       '/webhook/**': {
-        proxy: `${process.env.NUXT_PUBLIC_N8N_BASE_URL || 'http://localhost:5678'}/webhook/**`
+        proxy: `${process.env.N8N_BASE_URL || 'http://localhost:5678'}/webhook/**`
       },
       '/webhook-test/**': {
-        proxy: `${process.env.NUXT_PUBLIC_N8N_BASE_URL || 'http://localhost:5678'}/webhook-test/**`
+        proxy: `${process.env.N8N_BASE_URL || 'http://localhost:5678'}/webhook-test/**`
       }
     }
   },
