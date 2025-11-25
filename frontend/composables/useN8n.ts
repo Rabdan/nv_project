@@ -66,7 +66,10 @@ export const useN8n = () => {
 
     // Strategy methods
     const callWebhook = (path: string, data = {}, method = 'GET') => {
-        const url = path;
+        // In development: use proxy (relative path)
+        // In production: use direct N8N URL
+        const url = mode === 'production' ? `${n8nBaseUrl}/${path}` : `/${path}`;
+
         return n8nApi({
             method,
             url,
