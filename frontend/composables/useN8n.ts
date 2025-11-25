@@ -9,7 +9,7 @@ export const useN8n = () => {
     const mode = config.public.mode;
     // We use a dummy baseURL because callWebhook overrides it.
     const n8nApi = axios.create({
-        baseURL: mode === 'development' ? n8nBaseUrl : '/',
+        baseURL: mode === 'production' ? n8nBaseUrl : '/',
         headers: { 'Content-Type': 'application/json' }
     });
 
