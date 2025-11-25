@@ -1,0 +1,152 @@
+{
+  "name": "Generate Posts",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-posts",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-generate",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "generate-posts"
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies/{{ $json.body.strategyId }}",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('Webhook').item.json.headers.authorization }}"
+            },
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-strategy",
+      "name": "Get Strategy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate post calendar based on strategy schedule\nconst strategy = $input.item.json;\nconst [year, monthNum] = strategy.month.split('-').map(Number);\nconst daysInMonth = new Date(year, monthNum, 0).getDate();\n\nconst dayMap = {\n  'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6, 'Sun': 0\n};\n\nconst posts = [];\nconst existingDates = new Set((strategy.posts || []).map(p => new Date(p.scheduledDate).toISOString()));\n\n// Generate for each platform\n['linkedin', 'instagram', 'facebook'].forEach(platform => {\n  const config = strategy.schedule[platform];\n  const targetDays = config.days.map(d => dayMap[d]);\n  \n  for (let day = 1; day <= daysInMonth; day++) {\n    const date = new Date(year, monthNum - 1, day);\n    const dayOfWeek = date.getDay();\n    \n    if (targetDays.includes(dayOfWeek)) {\n      const [hours, minutes] = config.time.split(':').map(Number);\n      date.setHours(hours, minutes, 0, 0);\n      \n      if (!existingDates.has(date.toISOString())) {\n        posts.push({\n          platform: platform.charAt(0).toUpperCase() + platform.slice(1),\n          scheduledDate: date.toISOString(),\n          status: 'pending',\n          content: null,\n          generatedAt: null\n        });\n      }\n    }\n  }\n});\n\nreturn { \n  strategyId: strategy._id,\n  month: strategy.month,\n  newPosts: posts,\n  existingPosts: strategy.posts || []\n};"
+      },
+      "id": "generate-calendar",
+      "name": "Generate Calendar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies/{{ $json.strategyId }}",
+        "method": "PUT",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('Webhook').item.json.headers.authorization }}"
+            },
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "update-strategy",
+      "name": "Update Strategy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ message: 'Posts generated', newPostsCount: $('Generate Calendar').item.json.newPosts.length, strategy: $json }) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Strategy": {
+      "main": [
+        [
+          {
+            "node": "Generate Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Calendar": {
+      "main": [
+        [
+          {
+            "node": "Update Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Strategy": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}

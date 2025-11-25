@@ -1,0 +1,67 @@
+{
+  "name": "Login",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "login",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "requestMethod": "POST",
+        "url": "{BACKEND_URL}/auth/login",
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "username",
+              "value": "={{ $json.body.username }}"
+            },
+            {
+              "name": "password",
+              "value": "={{ $json.body.password }}"
+            }
+          ]
+        }
+      },
+      "name": "Backend Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        300,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Backend Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

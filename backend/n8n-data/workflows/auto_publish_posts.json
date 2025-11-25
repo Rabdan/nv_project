@@ -1,0 +1,487 @@
+{
+  "name": "Auto Publish Posts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 * * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-hourly",
+      "name": "Schedule (Every Hour)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "{BACKEND_URL}/api/strategies",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-all-strategies",
+      "name": "Get All Strategies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Find all posts ready to publish\nconst strategies = $input.all();\nconst now = new Date();\nconst postsToPublish = [];\n\nstrategies.forEach(strategyItem => {\n  const strategy = strategyItem.json.items ? strategyItem.json.items : [strategyItem.json];\n  \n  strategy.forEach(s => {\n    if (!s.posts) return;\n    \n    s.posts.forEach(post => {\n      // Check if post is approved and scheduled for now or earlier\n      const scheduledDate = new Date(post.scheduledDate);\n      const isTimeToPublish = scheduledDate <= now;\n      const isApproved = post.status === 'approved';\n      const notPublished = post.status !== 'published';\n      \n      if (isTimeToPublish && isApproved && notPublished) {\n        postsToPublish.push({\n          strategyId: s._id,\n          postId: post._id,\n          platform: post.platform,\n          content: post.content,\n          image: post.image,\n          scheduledDate: post.scheduledDate\n        });\n      }\n    });\n  });\n});\n\nif (postsToPublish.length === 0) {\n  return { skip: true, message: 'No posts to publish' };\n}\n\nreturn postsToPublish;"
+      },
+      "id": "find-posts-to-publish",
+      "name": "Find Posts to Publish",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.skip }}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "id": "if-posts-found",
+      "name": "If Posts Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "split-posts",
+      "name": "Split Posts",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1050,
+        225
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.platform }}",
+              "operation": "equals",
+              "value2": "Facebook"
+            }
+          ]
+        }
+      },
+      "id": "if-facebook",
+      "name": "If Facebook",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.platform }}",
+              "operation": "equals",
+              "value2": "Instagram"
+            }
+          ]
+        }
+      },
+      "id": "if-instagram",
+      "name": "If Instagram",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.platform }}",
+              "operation": "equals",
+              "value2": "LinkedIn"
+            }
+          ]
+        }
+      },
+      "id": "if-linkedin",
+      "name": "If LinkedIn",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        450
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "postAs": "page",
+        "content": "={{ $json.content }}",
+        "options": {
+          "underlyingObject": "={{ $json.image }}"
+        }
+      },
+      "id": "publish-facebook",
+      "name": "Publish to Facebook",
+      "type": "n8n-nodes-base.facebook",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        75
+      ],
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "Facebook",
+          "name": "Facebook"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "caption": "={{ $json.content }}",
+        "imageUrl": "={{ $json.image }}",
+        "options": {}
+      },
+      "id": "publish-instagram",
+      "name": "Publish to Instagram",
+      "type": "n8n-nodes-base.instagram",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        300
+      ],
+      "credentials": {
+        "instagramOAuth2Api": {
+          "id": "Instagram",
+          "name": "Instagram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "text": "={{ $json.content }}",
+        "options": {
+          "imageUrl": "={{ $json.image }}"
+        }
+      },
+      "id": "publish-linkedin",
+      "name": "Publish to LinkedIn",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        450
+      ],
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "LinkedIn",
+          "name": "LinkedIn"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare update data\nconst postData = $('Split Posts').item.json;\nconst publishResult = $json;\n\nreturn {\n  strategyId: postData.strategyId,\n  postId: postData.postId,\n  publishedUrl: publishResult.id || publishResult.url || 'Published',\n  publishedAt: new Date().toISOString()\n};"
+      },
+      "id": "prepare-update",
+      "name": "Prepare Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies/{{ $json.strategyId }}",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-strategy",
+      "name": "Get Strategy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Update post status\nconst strategy = $json;\nconst updateData = $('Prepare Update').item.json;\n\nconst postIndex = strategy.posts.findIndex(p => p._id === updateData.postId);\nif (postIndex !== -1) {\n  strategy.posts[postIndex].status = 'published';\n  strategy.posts[postIndex].publishedAt = updateData.publishedAt;\n  strategy.posts[postIndex].publishedUrl = updateData.publishedUrl;\n}\n\nreturn { posts: strategy.posts };"
+      },
+      "id": "update-post-status",
+      "name": "Update Post Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies/{{ $('Prepare Update').item.json.strategyId }}",
+        "method": "PUT",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "save-strategy",
+      "name": "Save Strategy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2250,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule (Every Hour)": {
+      "main": [
+        [
+          {
+            "node": "Get All Strategies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Strategies": {
+      "main": [
+        [
+          {
+            "node": "Find Posts to Publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Posts to Publish": {
+      "main": [
+        [
+          {
+            "node": "If Posts Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Posts Found": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Split Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Posts": {
+      "main": [
+        [
+          {
+            "node": "If Facebook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Instagram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Facebook": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Publish to Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Instagram": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Publish to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If LinkedIn": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Publish to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to Facebook": {
+      "main": [
+        [
+          {
+            "node": "Prepare Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to Instagram": {
+      "main": [
+        [
+          {
+            "node": "Prepare Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Prepare Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Update": {
+      "main": [
+        [
+          {
+            "node": "Get Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Strategy": {
+      "main": [
+        [
+          {
+            "node": "Update Post Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Post Status": {
+      "main": [
+        [
+          {
+            "node": "Save Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Strategy": {
+      "main": [
+        [
+          {
+            "node": "Split Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}

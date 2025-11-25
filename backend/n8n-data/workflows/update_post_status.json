@@ -1,0 +1,157 @@
+{
+    "name": "Update Post Status",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "post/status",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-status",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1,
+            "position": [
+                250,
+                300
+            ],
+            "webhookId": "update-post-status"
+        },
+        {
+            "parameters": {
+                "url": "={BACKEND_URL}/api/strategies?filter={{ encodeURIComponent(JSON.stringify({ \"posts._id\": $json.body.postId })) }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{ $('Webhook').item.json.headers.authorization }}"
+                        },
+                        {
+                            "name": "x-api-key",
+                            "value": "{X-API-KEY}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "find-strategy",
+            "name": "Find Strategy",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Update post status\nconst strategy = $input.item.json.items[0];\nconst { postId, status } = $('Webhook').item.json.body;\n\nif (!strategy) throw new Error('Strategy not found');\n\nconst postIndex = strategy.posts.findIndex(p => p._id === postId);\nif (postIndex !== -1) {\n  strategy.posts[postIndex].status = status;\n}\n\nreturn strategy;"
+            },
+            "id": "update-status",
+            "name": "Update Status",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                650,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={BACKEND_URL}/api/strategies/{{ $json._id }}",
+                "method": "PUT",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ posts: $json.posts }) }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Authorization",
+                            "value": "={{ $('Webhook').item.json.headers.authorization }}"
+                        },
+                        {
+                            "name": "x-api-key",
+                            "value": "{X-API-KEY}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "save-strategy",
+            "name": "Save Strategy",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                850,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, message: 'Status updated' }) }}",
+                "options": {}
+            },
+            "id": "respond",
+            "name": "Respond",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1050,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Find Strategy",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Find Strategy": {
+            "main": [
+                [
+                    {
+                        "node": "Update Status",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Status": {
+            "main": [
+                [
+                    {
+                        "node": "Save Strategy",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Save Strategy": {
+            "main": [
+                [
+                    {
+                        "node": "Respond",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {},
+    "versionId": "1"
+}

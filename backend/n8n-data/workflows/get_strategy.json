@@ -1,0 +1,179 @@
+{
+  "name": "Get Strategy",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "strategy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-get",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "get-strategy"
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies?filter={{ encodeURIComponent(JSON.stringify({ month: $json.query.month })) }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $('Webhook').item.json.headers.authorization }}"
+            },
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-get-strategy",
+      "name": "Get from API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.items.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-empty",
+      "name": "If Empty",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare default strategy object\nconst month = $('Webhook').item.json.query.month;\nconst [year, monthNum] = month.split('-');\nconst date = new Date(year, monthNum - 1);\nconst monthName = date.toLocaleString('default', { month: 'long' });\n\nreturn {\n  id: `${month}`,\n  month: month,\n  theme: `New strategy for ${monthName} ${year}`,\n  pillars: {\n    education: 40,\n    success_stories: 30,\n    thought_leadership: 20,\n    clinic_updates: 10\n  },\n  topics: [\n    \"concussion recovery\",\n    \"post-trauma vision\",\n    \"therapy benefits\"\n  ],\n  schedule: {\n    linkedin: { frequency: 3, days: ['Mon', 'Wed', 'Fri'], time: '09:00', timezone: 'America/New_York' },\n    instagram: { frequency: 5, days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], time: '12:00', timezone: 'America/New_York' },\n    facebook: { frequency: 3, days: ['Tue', 'Thu', 'Sat'], time: '10:00', timezone: 'America/New_York' }\n  },\n  posts: [],\n  status: \"new\"\n};"
+      },
+      "id": "create-default",
+      "name": "Create Default",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond-default",
+      "name": "Respond Default",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.items[0]) }}",
+        "options": {}
+      },
+      "id": "respond-success",
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        850,
+        400
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get from API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get from API": {
+      "main": [
+        [
+          {
+            "node": "If Empty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Empty": {
+      "main": [
+        [
+          {
+            "node": "Create Default",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Default": {
+      "main": [
+        [
+          {
+            "node": "Respond Default",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}

@@ -1,0 +1,494 @@
+{
+  "name": "Auto Generate Posts",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * 0"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule (Sunday 2AM)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-posts",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        450
+      ],
+      "webhookId": "generate-posts-manual"
+    },
+    {
+      "parameters": {
+        "url": "{BACKEND_URL}/api/strategies",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-all-strategies",
+      "name": "Get All Strategies",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        450,
+        375
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "split-strategies",
+      "name": "Split Strategies",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        650,
+        375
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Check if posts need to be generated for this strategy\nconst strategy = $input.item.json;\nconst now = new Date();\nconst currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;\n\n// Only process current month strategies\nif (strategy.month !== currentMonth) {\n  return { skip: true, reason: 'Not current month' };\n}\n\nconst schedule = strategy.schedule || {};\nconst existingPosts = strategy.posts || [];\nconst postsToGenerate = [];\n\n// Get next 7 days\nconst daysToCheck = 7;\nconst dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };\n\nfor (let i = 0; i < daysToCheck; i++) {\n  const checkDate = new Date(now);\n  checkDate.setDate(checkDate.getDate() + i);\n  const dayOfWeek = checkDate.getDay();\n  \n  // Check each platform\n  ['linkedin', 'instagram', 'facebook'].forEach(platform => {\n    const config = schedule[platform];\n    if (!config) return;\n    \n    const scheduledDays = config.days.map(d => dayMap[d]);\n    if (!scheduledDays.includes(dayOfWeek)) return;\n    \n    // Set scheduled time\n    const [hours, minutes] = config.time.split(':').map(Number);\n    const scheduledDate = new Date(checkDate);\n    scheduledDate.setHours(hours, minutes, 0, 0);\n    \n    // Check if post already exists\n    const exists = existingPosts.some(p => \n      p.platform === platform.charAt(0).toUpperCase() + platform.slice(1) &&\n      new Date(p.scheduledDate).getTime() === scheduledDate.getTime()\n    );\n    \n    if (!exists) {\n      postsToGenerate.push({\n        platform: platform.charAt(0).toUpperCase() + platform.slice(1),\n        scheduledDate: scheduledDate.toISOString()\n      });\n    }\n  });\n}\n\nif (postsToGenerate.length === 0) {\n  return { skip: true, reason: 'No posts to generate' };\n}\n\nreturn {\n  skip: false,\n  strategyId: strategy._id,\n  strategy: strategy,\n  postsToGenerate: postsToGenerate\n};"
+      },
+      "id": "check-posts-needed",
+      "name": "Check Posts Needed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        375
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.skip }}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "id": "if-posts-needed",
+      "name": "If Posts Needed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1050,
+        375
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "split-posts",
+      "name": "Split Posts to Generate",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare prompt for content generation\nconst strategy = $('Check Posts Needed').item.json.strategy;\nconst post = $input.item.json;\n\nconst prompt = `Create engaging social media content for ${post.platform}.\n\nStrategy Theme: ${strategy.theme}\nContent Pillars: ${JSON.stringify(strategy.pillars)}\nTopics: ${strategy.topics.join(', ')}\n\nPlatform: ${post.platform}\nScheduled Date: ${post.scheduledDate}\n\nGenerate a compelling post that aligns with our content strategy. Include relevant hashtags and call-to-action.`;\n\nreturn {\n  prompt: prompt,\n  platform: post.platform,\n  scheduledDate: post.scheduledDate,\n  strategyId: strategy._id\n};"
+      },
+      "id": "prepare-prompt",
+      "name": "Prepare Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.prompt }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "generate-content",
+      "name": "Generate Content (OpenAI)",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        1650,
+        300
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI Key",
+          "name": "OpenAI Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "dall-e-3",
+        "prompt": "={{ 'Create a professional social media image for: ' + $('Prepare Prompt').item.json.prompt.substring(0, 200) }}",
+        "options": {
+          "size": "1024x1024"
+        }
+      },
+      "id": "generate-image",
+      "name": "Generate Image (DALL-E)",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1850,
+        300
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "OpenAI Key",
+          "name": "OpenAI Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "{BACKEND_URL}/api/uploads",
+        "method": "POST",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "image",
+              "value": "={{ $json.data[0].url }}"
+            },
+            {
+              "name": "filename",
+              "value": "={{ $('Prepare Prompt').item.json.strategyId + '_' + Date.now() + '.png' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "save-image",
+      "name": "Save Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2050,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepare post data\nconst content = $('Generate Content (OpenAI)').item.json.message.content;\nconst imagePath = $json.path;\nconst prepData = $('Prepare Prompt').item.json;\n\nreturn {\n  platform: prepData.platform,\n  scheduledDate: prepData.scheduledDate,\n  content: content,\n  image: imagePath,\n  status: 'pending',\n  generatedAt: new Date().toISOString()\n};"
+      },
+      "id": "prepare-post-data",
+      "name": "Prepare Post Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies/{{ $('Prepare Prompt').item.json.strategyId }}",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "get-strategy",
+      "name": "Get Strategy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Add new post to strategy\nconst strategy = $json;\nconst newPost = $('Prepare Post Data').item.json;\n\nif (!strategy.posts) strategy.posts = [];\nstrategy.posts.push(newPost);\n\nreturn { posts: strategy.posts };"
+      },
+      "id": "add-post",
+      "name": "Add Post to Strategy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies/{{ $('Prepare Prompt').item.json.strategyId }}",
+        "method": "PUT",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "{X-API-KEY}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "update-strategy",
+      "name": "Update Strategy",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'Posts generated' }) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        3050,
+        375
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule (Sunday 2AM)": {
+      "main": [
+        [
+          {
+            "node": "Get All Strategies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get All Strategies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Strategies": {
+      "main": [
+        [
+          {
+            "node": "Split Strategies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Strategies": {
+      "main": [
+        [
+          {
+            "node": "Check Posts Needed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Posts Needed": {
+      "main": [
+        [
+          {
+            "node": "If Posts Needed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Posts Needed": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Split Posts to Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Posts to Generate": {
+      "main": [
+        [
+          {
+            "node": "Prepare Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Content (OpenAI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Content (OpenAI)": {
+      "main": [
+        [
+          {
+            "node": "Generate Image (DALL-E)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image (DALL-E)": {
+      "main": [
+        [
+          {
+            "node": "Save Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Image": {
+      "main": [
+        [
+          {
+            "node": "Prepare Post Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Post Data": {
+      "main": [
+        [
+          {
+            "node": "Get Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Strategy": {
+      "main": [
+        [
+          {
+            "node": "Add Post to Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Post to Strategy": {
+      "main": [
+        [
+          {
+            "node": "Update Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Strategy": {
+      "main": [
+        [
+          {
+            "node": "Split Posts to Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1"
+}
