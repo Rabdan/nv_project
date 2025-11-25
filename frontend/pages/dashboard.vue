@@ -173,14 +173,22 @@ const posts = computed(() => strategy.value?.posts || []);
 const today = new Date();
 const actualCurrentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
+// Calculate next month from today
+const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+const nextMonthStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+
 const canGoPrev = computed(() => true);
 
 const canGoNext = computed(() => {
-  // Cannot go beyond the actual current month
-  if (currentMonthStr.value >= actualCurrentMonth) {
+  // Can navigate up to one month beyond current month
+  if (currentMonthStr.value >= nextMonthStr) {
     return false;
   }
-  // Can only go to next month if current strategy is complete
+  // If we're at current month, can always go to next month
+  if (currentMonthStr.value === actualCurrentMonth) {
+    return true;
+  }
+  // For past months, can only go forward if strategy is complete
   return isStrategyComplete.value;
 });
 
