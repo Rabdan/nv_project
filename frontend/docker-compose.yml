@@ -12,9 +12,3 @@ services:
       - APP_URL=${APP_URL:-http://localhost:3000}
       - N8N_BASE_URL=${N8N_BASE_URL:-http://localhost:5678}
     restart: unless-stopped
-    networks:
-      - neurovision-network
-
-networks:
-  neurovision-network:
-    external: true
