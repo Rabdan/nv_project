@@ -1,12 +1,12 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with clean cache
-RUN npm ci --only=production --ignore-scripts || npm install --legacy-peer-deps
+# Install dependencies
+RUN npm install --legacy-peer-deps
 
 # Copy application files
 COPY . .
