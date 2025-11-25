@@ -5,9 +5,9 @@ services:
   backend:
     build: ./backend
     ports:
-      - "3000:3000"
+      - "4000:4000"
     environment:
-      - PORT=${PORT:-3000}
+      - PORT=${PORT:-4000}
       - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/neurovision}
       - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
       - API_KEY=${API_KEY:-neurovision_secret_key}
@@ -43,7 +43,7 @@ services:
     ports:
       - "8080:3000"
     environment:
-      - VITE_N8N_BASE_URL=http://localhost:5678
-      - VITE_BACKEND_URL=http://localhost:3000
+      - VITE_N8N_BASE_URL=${N8N_API_URL}:5678
+      - VITE_BACKEND_URL=${BACKEND_URL}:4000
     depends_on:
       - backend

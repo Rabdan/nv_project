@@ -20,7 +20,21 @@
     },
     {
       "parameters": {
-        "url": "={BACKEND_URL}/api/strategies?filter={{ encodeURIComponent(JSON.stringify({ month: $json.body.month })) }}",
+        "jsCode": "// Set status to 'saved' for the strategy\nconst data = $input.first().json.body;\ndata.status = 'saved';\nreturn data;"
+      },
+      "id": "set-status",
+      "name": "Set Status to Saved",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        350,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={BACKEND_URL}/api/strategies?filter={{ encodeURIComponent(JSON.stringify({ month: $json.month })) }}",
+        "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
@@ -40,7 +54,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        450,
+        550,
         300
       ]
     },
@@ -71,7 +85,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        650,
+        750,
         300
       ]
     },
@@ -79,6 +93,7 @@
       "parameters": {
         "url": "{BACKEND_URL}/api/strategies",
         "method": "POST",
+        "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
@@ -91,6 +106,9 @@
             }
           ]
         },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Set Status to Saved').item.json) }}",
         "options": {}
       },
       "id": "create-new",
@@ -106,6 +124,7 @@
       "parameters": {
         "url": "={BACKEND_URL}/api/strategies/{{ $json.items[0]._id }}",
         "method": "PUT",
+        "sendHeaders": true,
         "headerParameters": {
           "parameters": [
             {
@@ -118,6 +137,9 @@
             }
           ]
         },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Set Status to Saved').item.json) }}",
         "options": {}
       },
       "id": "update-existing",
@@ -147,6 +169,17 @@
   ],
   "connections": {
     "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set Status to Saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Status to Saved": {
       "main": [
         [
           {
