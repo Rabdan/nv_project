@@ -32,7 +32,7 @@ docker-compose up --build -d
     - Returns: `{ "token": "jwt_token..." }`
 
 ### Universal Data Access (DAL)
-**Headers Required**: `x-api-key: ...` OR `Authorization: Bearer <jwt_token>`
+**Headers Required**: `x-api-key: ...` AND `Authorization: Bearer <jwt_token>`
 
 - `GET /api/:collection`
     - Query: `filter={}`, `sort={}`, `limit=100`, `skip=0`
