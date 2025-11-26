@@ -5,8 +5,8 @@ const axios = require('axios');
 const N8N_API_URL = (process.env.N8N_BASE_URL || 'http://n8n:5678') + '/api/v1';
 const N8N_API_KEY = process.env.N8N_API_KEY; // Needs to be set in env
 
-const WORKFLOWS_DIR = path.join(__dirname, process.env.N8N_DATA_DIR + '/workflows');
-const CREDENTIALS_DIR = path.join(__dirname, process.env.N8N_DATA_DIR + '/credentials');
+const WORKFLOWS_DIR = path.join('/app/n8n-data/workflows');
+const CREDENTIALS_DIR = path.join('/app/n8n-data/credentials');
 
 const syncCredentials = async () => {
     console.log('Starting n8n credential sync...');
@@ -76,7 +76,7 @@ const syncWorkflows = async () => {
         console.log('No workflows directory found, skipping sync.');
         return;
     }
-
+    console.log(`Syncing workflows from ${WORKFLOWS_DIR}`);
     const files = fs.readdirSync(WORKFLOWS_DIR).filter(f => f.endsWith('.json'));
 
     for (const file of files) {
@@ -174,9 +174,11 @@ const exportN8nData = async () => {
                 content = content.replace('OPENAI_API_KEY_PLACEHOLDER', process.env.OPENAI_API_KEY || 'YOUR_OPENAI_KEY');
                 content = content.replace('NV_API_KEY_PLACEHOLDER', process.env.API_KEY || 'YOUR_API_KEY');
                 archive.append(content, { name: `credentials/${file}` });
+                console.log(`Added credential: ${file}`);
             });
         }
 
+        console.log(`Syncing workflows from ${WORKFLOWS_DIR}`);
         // Process and add workflows
         if (fs.existsSync(WORKFLOWS_DIR)) {
             const workflowFiles = fs.readdirSync(WORKFLOWS_DIR).filter(f => f.endsWith('.json'));
@@ -187,6 +189,7 @@ const exportN8nData = async () => {
                 // Replace API Key placeholder
                 content = content.replace(/{X-API-KEY}/g, process.env.API_KEY || 'neurovision_secret_key');
                 archive.append(content, { name: `workflows/${file}` });
+                console.log(`Added workflow: ${file}`);
             });
         }
 
