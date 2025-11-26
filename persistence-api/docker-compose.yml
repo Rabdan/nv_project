@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:latest
+    container_name: persistence-api-mongo
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - ./data/mongo:/data/db
+    networks:
+      - persistence-network
+    restart: unless-stopped
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: persistence-api-qdrant
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    networks:
+      - persistence-network
+    restart: unless-stopped
+
+  # Persistence API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: persistence-api
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      - PORT=${PORT:-4000}
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/persistence}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      - API_KEY=${API_KEY:-persistence_secret_key}
+      - JWT_SECRET=${JWT_SECRET:-persistence_secret_key}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - N8N_API_KEY=${N8N_API_KEY}
+      - N8N_BASE_URL=${N8N_BASE_URL:-http://localhost:5678}
+      - BACKEND_URL=${BACKEND_URL:-http://api:4000}
+    depends_on:
+      - mongo
+      - qdrant
+    volumes:
+      - ./uploads:/app/uploads
+      - ./n8n-data:/app/n8n-data
+    networks:
+      - persistence-network
+    restart: unless-stopped
+
+networks:
+  persistence-network:
+    driver: bridge

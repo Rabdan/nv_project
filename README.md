@@ -19,7 +19,7 @@ docker-compose up --build -d
 - **Frontend**: Vue.js 3, TailwindCSS. User interface for managing strategies.
 - **n8n**: Workflow automation engine (connects Frontend actions to AI/Social logic).
 
-## Backend API Reference
+## Data Persistence Service Reference
 
 ### Authentication
 **Headers Required**: `x-api-key: <your_api_key>` (Default: `neurovision_secret_key`)

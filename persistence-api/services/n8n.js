@@ -3,7 +3,7 @@ const path = require('path');
 const axios = require('axios');
 
 const WORKFLOWS_DIR = path.join(__dirname, '../n8n-data/workflows');
-const N8N_API_URL = process.env.N8N_API_URL || 'http://n8n:5678/api/v1';
+const N8N_API_URL = (process.env.N8N_BASE_URL || 'http://n8n:5678') + '/api/v1';
 const N8N_API_KEY = process.env.N8N_API_KEY; // Needs to be set in env
 
 const CREDENTIALS_DIR = path.join(__dirname, '../n8n-data/credentials');
