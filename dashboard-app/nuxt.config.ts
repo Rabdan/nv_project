@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const isDev = process.env.NODE_ENV !== 'production'
+const mode = process.env.NUXT_PUBLIC_MODE || process.env.NODE_ENV || 'development'
+const isDev = mode !== 'production'
 const n8nBaseUrl = process.env.N8N_BASE_URL || 'http://localhost:5678'
 
 export default defineNuxtConfig({
@@ -12,7 +13,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       n8nBaseUrl: n8nBaseUrl,
-      mode: process.env.NODE_ENV || 'development'
+      mode: mode
     }
   },
   nitro: {

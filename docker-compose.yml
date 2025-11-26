@@ -66,7 +66,8 @@ services:
     env_file:
       - .env
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
+      - NUXT_PUBLIC_MODE=${NODE_ENV:-production}
     restart: unless-stopped
 
 networks:

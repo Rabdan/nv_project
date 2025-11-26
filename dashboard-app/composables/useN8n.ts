@@ -19,6 +19,8 @@ export const useN8n = () => {
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
+        console.log(mode);
+        console.log(config);
         return config;
     });
 
