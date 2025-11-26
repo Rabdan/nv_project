@@ -1,149 +1,159 @@
-# Data Persistence Service
+# N8N Persistence Hub
 
-## Database Seeding
+**Universal Data, Authentication, and Workflow Sync Node for n8n Projects**
 
-When running via Docker Compose, an admin user is automatically created:
+The **N8N Persistence Hub** is a standalone backend service designed to act as the "central nervous system" for your n8n automation projects. It provides a unified API for data persistence (MongoDB & Qdrant), secure authentication (JWT & API Keys), and seamless workflow synchronization.
 
-- **Username**: `admin`
-- **Password**: `admin123`
+---
 
-### Manual Seed Execution
+## 🚀 Features
 
-If you need to run the seed manually:
+-   **Universal Data Access (DAL):** A unified REST API to CRUD data in MongoDB.
+-   **Vector Search Ready:** Built-in integration with Qdrant for RAG (Retrieval-Augmented Generation) applications.
+-   **Secure Authentication:**
+    -   **API Key:** For server-to-server communication (e.g., n8n ↔ Hub).
+    -   **JWT:** For frontend user sessions.
+-   **Workflow Sync:** Automatically syncs your local `n8n-data` (workflows & credentials) to your n8n instance on startup or via API.
+-   **File Uploads:** Centralized file management for generated content.
+
+---
+
+## 📦 Installation & Usage
+
+You can easily integrate the N8N Persistence Hub into your existing project using Docker Compose.
+
+### 1. Docker Compose Integration
+
+Add the following service to your project's `docker-compose.yml`:
+
+```yaml
+services:
+  persistence-hub:
+    image: ghcr.io/Rabdan/n8n-persistence-hub:latest
+    container_name: n8n-persistence-hub
+    ports:
+      - "4000:4000"
+    environment:
+      # --- Core Configuration ---
+      - PORT=4000
+      - NODE_ENV=production
+      
+      # --- Security ---
+      - API_KEY=your_secure_api_key
+      - JWT_SECRET=your_jwt_secret_key
+      
+      # --- External Services ---
+      - MONGO_URI=mongodb://mongo:27017/your_db_name
+      - QDRANT_URL=http://qdrant:6333
+      - OPENAI_API_KEY=sk-... (Optional, for internal tools)
+      
+      # --- n8n Integration ---
+      - N8N_API_URL=http://n8n:5678/api/v1
+      - N8N_API_KEY=your_n8n_api_key
+      - N8N_BASE_URL=http://n8n:5678
+      
+      # --- Self-Reference ---
+      - BACKEND_URL=http://persistence-hub:4000
+      
+      # --- Data Paths (Inside Container) ---
+      - UPLOADS_DIR=/app/uploads
+      - N8N_DATA_DIR=/app/n8n-data
+
+    volumes:
+      # Mount your local uploads directory
+      - ./uploads:/app/uploads
+      # Mount your local n8n workflows directory
+      - ./n8n-data:/app/n8n-data
+      
+    depends_on:
+      - mongo
+      - qdrant
+```
+
+### 2. Environment Variables
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `PORT` | Port to run the server on | `4000` |
+| `API_KEY` | Master key for server-to-server auth | `neurovision_secret_key` |
+| `JWT_SECRET` | Secret for signing user tokens | `supersecretkey` |
+| `MONGO_URI` | Connection string for MongoDB | `mongodb://mongo:27017/nvision` |
+| `QDRANT_URL` | URL of the Qdrant instance | `http://qdrant:6333` |
+| `N8N_API_KEY` | API Key from your n8n instance | - |
+| `N8N_BASE_URL` | Base URL of your n8n instance | `http://localhost:5678` |
+| `BACKEND_URL` | Public URL of this service (for file links) | `http://localhost:4000` |
+| `UPLOADS_DIR` | Directory to store uploaded files | `/app/uploads` |
+| `N8N_DATA_DIR` | Directory containing workflows to sync | `/app/n8n-data` |
+
+---
+
+## � API Endpoints
+
+All endpoints require authentication. You can use either:
+-   **Header:** `x-api-key: YOUR_API_KEY` (Server-to-Server)
+-   **Header:** `Authorization: Bearer YOUR_JWT_TOKEN` (Client-Side)
+
+### 🔐 Authentication
+-   `POST /auth/register` - Register a new user
+    -   Body: `{ "username": "...", "password": "..." }`
+-   `POST /auth/login` - Login and get JWT token
+    -   Body: `{ "username": "...", "password": "..." }`
+
+### 💾 Database (MongoDB)
+Universal CRUD endpoints for any collection.
+-   `GET /api/:collection` - List items (supports filtering, sorting, pagination)
+    -   Query: `?filter={"status":"active"}&sort={"createdAt":-1}&limit=10`
+-   `GET /api/:collection/:id` - Get item by ID
+-   `POST /api/:collection` - Create new item
+-   `PUT /api/:collection/:id` - Update item
+-   `DELETE /api/:collection/:id` - Delete item
+
+### 🧠 Vector Database (Qdrant)
+-   `POST /api/qdrant/upsert` - Store vectors
+-   `POST /api/qdrant/search` - Search similar vectors
+
+### 📂 File Uploads
+-   `POST /api/uploads` - Upload file (Multipart Form)
+-   `POST /api/uploads` - Upload from URL (JSON Body: `{ "image": "http...", "filename": "..." }`)
+-   `GET /uploads/:filename` - Serve static files
+
+---
+
+## �🔄 Workflow Synchronization
+
+The Hub can automatically sync your workflows and credentials from the mounted `n8n-data` volume to your running n8n instance.
+
+### Directory Structure
+Ensure your mounted volume follows this structure:
+```
+n8n-data/
+├── workflows/
+│   ├── my-workflow.json
+│   └── ...
+└── credentials/
+    ├── my-creds.json
+    └── ...
+```
+
+### Trigger Sync Manually
+You can trigger a sync at any time using a simple CURL command:
 
 ```bash
-npm run seed
+curl -X POST \
+  -H "x-api-key: YOUR_API_KEY" \
+  http://localhost:4000/api/n8n/sync
 ```
 
-## JWT Sessions
+---
 
-The system uses sessions to manage JWT tokens:
+## 🛠️ Development
 
-- Upon login, a session is created with a token
-- The token is stored in the database in the user's `sessions` array
-- Each request validates the token against active sessions
-- Upon logout, the token is removed from sessions
-- Expired sessions are automatically cleaned up on new login
+To run the Hub locally for development:
 
-### API Endpoints
+1.  Clone the repository.
+2.  Install dependencies: `npm install`
+3.  Start in dev mode: `npm run dev`
 
-#### POST /auth/login
-Login to the system. Creates a new session.
+---
 
-```json
-{
-  "username": "admin",
-  "password": "admin123"
-}
-```
-
-#### POST /auth/logout
-Logout from the system. Removes the current session.
-
-Requires header: `Authorization: Bearer <token>`
-
-## Data Access Layer (DAL)
-
-The backend provides a universal Data Access Layer that allows CRUD operations on any MongoDB collection through a RESTful API.
-
-### Authentication
-
-DAL endpoints require either:
-- **API Key**: `x-api-key: <your_api_key>` header (for system/n8n access)
-- **JWT Token**: `Authorization: Bearer <token>` header (for user access)
-
-### Endpoints
-
-#### GET /api/:collection
-Retrieve documents from a collection with optional filtering, sorting, and pagination.
-
-**Query Parameters:**
-- `filter` - MongoDB query object (JSON string, default: `{}`)
-- `sort` - Sort specification (JSON string, default: `{}`)
-- `limit` - Maximum number of documents to return (default: `100`)
-- `skip` - Number of documents to skip (default: `0`)
-
-**Example:**
-```bash
-GET /api/strategies?filter={"month":"2024-01"}&limit=10
-```
-
-#### GET /api/:collection/:id
-Retrieve a single document by ID.
-
-**Example:**
-```bash
-GET /api/strategies/507f1f77bcf86cd799439011
-```
-
-#### POST /api/:collection
-Create a new document in the collection.
-
-**Body:** JSON object representing the document to create.
-
-**Example:**
-```bash
-POST /api/strategies
-Content-Type: application/json
-
-{
-  "month": "2024-01",
-  "theme": "New Year Health Goals",
-  "pillars": {
-    "education": 40,
-    "success_stories": 30,
-    "thought_leadership": 20,
-    "clinic_updates": 10
-  }
-}
-```
-
-#### PUT /api/:collection/:id
-Update an existing document by ID.
-
-**Body:** JSON object with fields to update.
-
-**Example:**
-```bash
-PUT /api/strategies/507f1f77bcf86cd799439011
-Content-Type: application/json
-
-{
-  "theme": "Updated Theme"
-}
-```
-
-#### DELETE /api/:collection/:id
-Delete a document by ID.
-
-**Example:**
-```bash
-DELETE /api/strategies/507f1f77bcf86cd799439011
-```
-
-### Supported Collections
-
-The DAL works with any MongoDB collection, but the primary collections are:
-- `strategies` - Monthly content strategies
-- `posts` - Social media posts
-- `users` - User accounts
-
-### Error Handling
-
-All DAL endpoints return appropriate HTTP status codes:
-- `200` - Success
-- `201` - Created (POST)
-- `400` - Bad Request (invalid input)
-- `401` - Unauthorized (missing/invalid auth)
-- `404` - Not Found
-- `500` - Server Error
-
-## Docker
-
-Run via Docker Compose:
-
-```bash
-docker-compose up --build
-```
-
-Seed is executed automatically when the container starts.
+**License:** MIT
