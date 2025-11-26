@@ -9,11 +9,14 @@ services:
       args:
         - N8N_BASE_URL=${N8N_BASE_URL:-http://localhost:5678}
         - APP_URL=${APP_URL:-http://localhost:4000}
+        - NODE_ENV=${NODE_ENV:-production}
+        - NUXT_PUBLIC_MODE=${NODE_ENV:-development}
     container_name: dashboard-app
     ports:
       - "${DASHBOARD_PORT:-5001}:3000"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
+      - NUXT_PUBLIC_MODE=${NODE_ENV:-development}
       - N8N_BASE_URL=${N8N_BASE_URL:-http://localhost:5678}
       - APP_URL=${APP_URL:-http://localhost:4000}
     restart: unless-stopped

@@ -60,6 +60,8 @@ services:
       args:
         - N8N_BASE_URL=${N8N_BASE_URL}
         - APP_URL=${PERSISTENCE_API_URL}
+        - NODE_ENV=${NODE_ENV:-production}
+        - NUXT_PUBLIC_MODE=${NODE_ENV:-production}
     container_name: neurovision-dashboard
     ports:
       - "80:3000"

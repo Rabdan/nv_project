@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-const mode = process.env.NUXT_PUBLIC_MODE || process.env.NODE_ENV || 'development'
+// https://nuxt.com/docs/api/configuration/nuxt-config
+const mode = process.env.NUXT_PUBLIC_MODE || 'development'
 const isDev = mode !== 'production'
 const n8nBaseUrl = process.env.N8N_BASE_URL || 'http://localhost:5678'
 
