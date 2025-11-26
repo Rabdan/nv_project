@@ -59,6 +59,47 @@ The Frontend communicates with n8n via Webhooks to trigger complex workflows. Th
 | **Generate Content** | POST | `/generate` | Body: `{ strategyId: "..." }`. Generates posts. |
 | **Publish Content** | POST | `/publish` | Body: `{ postId: "..." }`. Publishes post. |
 
+## n8n Workflows Management
+
+### Sync Workflows to n8n Instance
+
+Upload all workflows and credentials from `n8n-data/` directory to your n8n instance:
+
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  http://YOUR_SERVER:4000/api/n8n/sync
+```
+
+**Example:**
+```bash
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: neurovision_secret_key" \
+  http://localhost:4000/api/n8n/sync
+```
+
+### Export Workflows as ZIP
+
+Download all workflows and credentials as a ZIP file for manual import:
+
+```bash
+# Generate the ZIP file
+curl -X POST \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: YOUR_API_KEY" \
+  http://YOUR_SERVER:4000/api/n8n/export
+
+# Download the ZIP file
+wget http://YOUR_SERVER:4000/uploads/n8n-data.zip
+# or
+curl -O http://YOUR_SERVER:4000/uploads/n8n-data.zip
+```
+
+**Note:** Replace `YOUR_API_KEY` with your actual API key from `.env` file and `YOUR_SERVER` with your server address.
+
+
 ## Configuration
 
 - **Backend**: `.env` or `docker-compose.yml` environment variables.

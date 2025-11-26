@@ -8,7 +8,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./persistence-api/data/mongo:/data/db
+      - ${MONGO_DATA_DIR:-./data/mongo}:/data/db
     networks:
       - neurovision-network
     restart: unless-stopped
@@ -20,7 +20,7 @@ services:
     ports:
       - "6333:6333"
     volumes:
-      - ./persistence-api/data/qdrant:/qdrant/storage
+      - ${QDRANT_DATA_DIR:-./data/qdrant}:/qdrant/storage
     networks:
       - neurovision-network
     restart: unless-stopped
@@ -40,12 +40,14 @@ services:
       - MONGO_URI=mongodb://mongo:27017/neurovision
       - QDRANT_URL=http://qdrant:6333
       - BACKEND_URL=http://persistence-api:4000
+      - UPLOADS_DIR=/app/uploads
+      - N8N_DATA_DIR=/app/n8n-data
     depends_on:
       - mongo
       - qdrant
     volumes:
-      - ./persistence-api/uploads:/app/uploads
-      - ./persistence-api/n8n-data:/app/n8n-data
+      - ${UPLOADS_DIR:-./uploads}:/app/uploads
+      - ${N8N_DATA_DIR:-./n8n-data}:/app/n8n-data
     networks:
       - neurovision-network
     restart: unless-stopped

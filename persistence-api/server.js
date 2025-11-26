@@ -20,7 +20,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const uploadsPath = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://mongo:27017/nvision')

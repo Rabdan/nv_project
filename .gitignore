@@ -4,6 +4,6 @@ dist
 coverage
 .idea
 .vscode
-persistence-api/data
-persistence-api/uploads
+uploads
+data
 .env

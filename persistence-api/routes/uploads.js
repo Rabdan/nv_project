@@ -8,7 +8,7 @@ const axios = require('axios');
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadDir = path.join(__dirname, '../uploads');
+        const uploadDir = process.env.UPLOADS_DIR || path.join(__dirname, '../../uploads');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
         const buffer = Buffer.from(response.data, 'binary');
 
         // Save to uploads directory
-        const uploadDir = path.join(__dirname, '../uploads');
+        const uploadDir = process.env.UPLOADS_DIR || path.join(__dirname, '../../uploads');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
