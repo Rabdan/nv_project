@@ -1,15 +1,15 @@
 <script setup>
-// Redirect to dashboard if authenticated, otherwise to login
+// Redirect to strategies if authenticated, otherwise to login
 if (process.client) {
-  const token = localStorage.getItem('jwt_token');
-  if (token) {
-    navigateTo('/dashboard');
-  } else {
-    navigateTo('/login');
-  }
+    const token = localStorage.getItem("jwt_token");
+    if (token) {
+        navigateTo("/strategies");
+    } else {
+        navigateTo("/login");
+    }
 }
 </script>
 
 <template>
-  <div></div>
+    <div></div>
 </template>
