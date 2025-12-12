@@ -90,8 +90,8 @@ export const useN8n = () => {
     return callWebhook("webhook/strategy", data, "POST");
   };
 
-  const generateContent = async (strategyId: string) => {
-    return callWebhook("webhook-test/generate-posts", { strategyId }, "POST");
+  const generateContent = async (month: string) => {
+    return callWebhook("webhook/generate-posts", { month }, "POST");
   };
 
   const publishContent = async (postId: string) => {
@@ -113,7 +113,7 @@ export const useN8n = () => {
    */
   const registerUser = async (username: string, password: string) => {
     const res = await callWebhook(
-      "auth/register",
+      "webhook-test/register",
       { username, password },
       "POST",
     );

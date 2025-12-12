@@ -485,13 +485,10 @@ const saveAndReload = async () => {
 };
 
 const generatePosts = async () => {
-    if (!strategy.value._id) {
-        // try to save first
-        await saveStrategy();
-    }
+    await saveStrategy();
     generating.value = true;
     try {
-        await n8n.generateContent(strategy.value._id);
+        await n8n.generateContent(strategy.value.month);
         await loadStrategy();
     } catch (error) {
         console.error("Failed to generate posts:", error);
