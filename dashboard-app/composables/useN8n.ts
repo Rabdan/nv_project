@@ -91,7 +91,7 @@ export const useN8n = () => {
   };
 
   const generateContent = async (month: string) => {
-    return callWebhook("webhook-test/generate-posts", { month }, "POST");
+    return callWebhook("webhook/generate-posts", { month }, "POST");
   };
 
   const publishContent = async (postId: string) => {
