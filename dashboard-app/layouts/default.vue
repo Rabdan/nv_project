@@ -14,9 +14,7 @@
                 <UButton
                     to="/strategies"
                     icon="i-heroicons-chart-bar"
-                    variant="ghost"
-                    color="gray"
-                    class="w-full justify-start text-left"
+                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                 >
                     Strategies
                 </UButton>
@@ -24,9 +22,7 @@
                 <UButton
                     to="/posts"
                     icon="i-heroicons-document-text"
-                    variant="ghost"
-                    color="gray"
-                    class="w-full justify-start text-left"
+                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                 >
                     Posts
                 </UButton>
@@ -34,9 +30,7 @@
                 <UButton
                     to="/analysis"
                     icon="i-heroicons-chart-pie"
-                    variant="ghost"
-                    color="gray"
-                    class="w-full justify-start text-left"
+                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                 >
                     Analysis
                 </UButton>
@@ -44,9 +38,7 @@
                 <UButton
                     to="/settings"
                     icon="i-heroicons-cog-6-tooth"
-                    variant="ghost"
-                    color="gray"
-                    class="w-full justify-start text-left"
+                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                 >
                     Settings
                 </UButton>
@@ -55,8 +47,6 @@
             <div class="px-4 py-4 border-t border-gray-800">
                 <UButton
                     icon="i-heroicons-arrow-right-on-rectangle"
-                    variant="soft"
-                    color="yellow"
                     class="w-full justify-center bg-yellow-400 text-black hover:bg-yellow-300"
                     @click="handleLogout"
                 >
@@ -72,8 +62,7 @@
                     <div class="flex items-center gap-4 sm:hidden">
                         <UButton
                             icon="i-heroicons-bars-3"
-                            variant="ghost"
-                            color="gray"
+                            class="bg-transparent text-gray-300 hover:bg-gray-700 rounded-md"
                             @click="toggleMobileSidebar"
                         />
                         <h1 class="text-lg font-bold text-yellow-400">
@@ -90,11 +79,9 @@
                                     ? 'i-heroicons-moon-20-solid'
                                     : 'i-heroicons-sun-20-solid'
                             "
-                            color="yellow"
-                            variant="ghost"
+                            class="text-yellow-400 bg-transparent hover:bg-yellow-500/10 rounded-md"
                             aria-label="Theme"
                             @click="isDark = !isDark"
-                            class="hover:bg-yellow-500/10"
                         />
                     </ClientOnly>
 
@@ -130,9 +117,7 @@
                     <UButton
                         to="/strategies"
                         icon="i-heroicons-chart-bar"
-                        variant="ghost"
-                        color="gray"
-                        class="w-full justify-start text-left"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                         @click="mobileSidebarOpen = false"
                     >
                         Strategies
@@ -141,9 +126,7 @@
                     <UButton
                         to="/posts"
                         icon="i-heroicons-document-text"
-                        variant="ghost"
-                        color="gray"
-                        class="w-full justify-start text-left"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                         @click="mobileSidebarOpen = false"
                     >
                         Posts
@@ -152,9 +135,7 @@
                     <UButton
                         to="/settings"
                         icon="i-heroicons-cog-6-tooth"
-                        variant="ghost"
-                        color="gray"
-                        class="w-full justify-start text-left"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                         @click="mobileSidebarOpen = false"
                     >
                         Settings

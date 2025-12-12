@@ -1,4 +1,12 @@
 <template>
+    <!-- Safelist dynamic UButton colors so Tailwind includes them (keep these commented examples) -->
+    <!-- <UButton color="yellow" /> -->
+    <!-- <UButton color="gray" /> -->
+    <!-- <UButton color="blue" /> -->
+    <!-- <UButton color="pink" /> -->
+    <!-- <UButton color="purple" /> -->
+    <!-- <UButton color="green" /> -->
+
     <div class="space-y-6">
         <!-- Month selector + Theme block (month select removed; only prev/next navigation remains) -->
         <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
@@ -17,9 +25,8 @@
                         icon="i-heroicons-chevron-left"
                         @click="prevMonth"
                         :disabled="!canGoPrev"
-                        variant="ghost"
-                        color="gray"
                         size="sm"
+                        class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
                     />
                     <div
                         class="px-3 py-2 bg-gray-900 rounded text-white font-medium"
@@ -31,18 +38,16 @@
                         icon="i-heroicons-chevron-right"
                         @click="nextMonth"
                         :disabled="!canGoNext"
-                        variant="ghost"
-                        color="gray"
                         size="sm"
+                        class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
                     />
 
                     <!-- Save button (posts to /strategy) -->
                     <div class="ml-4">
                         <UButton
                             :loading="saving"
-                            color="yellow"
                             @click="saveAndReload"
-                            class="bg-yellow-400 text-black"
+                            class="bg-yellow-400 text-black hover:bg-yellow-300"
                         >
                             Save
                         </UButton>
@@ -81,10 +86,9 @@
                             <UButton
                                 icon="i-heroicons-minus"
                                 size="xs"
-                                variant="soft"
-                                color="gray"
                                 @click="decrementPillar(key)"
                                 :disabled="strategy.pillars[key] <= 0"
+                                class="bg-gray-700 text-white hover:bg-gray-600 rounded"
                             />
                             <div class="w-10 text-center text-white">
                                 {{ strategy.pillars[key] }}
@@ -92,10 +96,9 @@
                             <UButton
                                 icon="i-heroicons-plus"
                                 size="xs"
-                                variant="soft"
-                                color="gray"
                                 @click="incrementPillar(key)"
                                 :disabled="strategy.pillars[key] >= 100"
+                                class="bg-gray-700 text-white hover:bg-gray-600 rounded"
                             />
                         </div>
                     </div>
@@ -133,6 +136,7 @@
                         icon="i-heroicons-plus"
                         @click="addTopicFromInput"
                         :disabled="!newTopic.trim()"
+                        class="bg-gray-700 text-white hover:bg-gray-600 rounded"
                     />
                 </div>
             </div>
@@ -159,15 +163,10 @@
                         v-for="day in daysOfWeek"
                         :key="'li-' + day.value"
                         size="sm"
-                        :color="
+                        :class="
                             strategy.schedule.linkedin.days.includes(day.value)
-                                ? 'yellow'
-                                : 'gray'
-                        "
-                        :variant="
-                            strategy.schedule.linkedin.days.includes(day.value)
-                                ? 'solid'
-                                : 'outline'
+                                ? 'bg-yellow-400 text-black rounded-md'
+                                : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
                         "
                         @click="toggleDay('linkedin', day.value)"
                     >
@@ -197,15 +196,10 @@
                         v-for="day in daysOfWeek"
                         :key="'ig-' + day.value"
                         size="sm"
-                        :color="
+                        :class="
                             strategy.schedule.instagram.days.includes(day.value)
-                                ? 'yellow'
-                                : 'gray'
-                        "
-                        :variant="
-                            strategy.schedule.instagram.days.includes(day.value)
-                                ? 'solid'
-                                : 'outline'
+                                ? 'bg-yellow-400 text-black rounded-md'
+                                : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
                         "
                         @click="toggleDay('instagram', day.value)"
                     >
@@ -233,15 +227,10 @@
                         v-for="day in daysOfWeek"
                         :key="'fb-' + day.value"
                         size="sm"
-                        :color="
+                        :class="
                             strategy.schedule.facebook.days.includes(day.value)
-                                ? 'yellow'
-                                : 'gray'
-                        "
-                        :variant="
-                            strategy.schedule.facebook.days.includes(day.value)
-                                ? 'solid'
-                                : 'outline'
+                                ? 'bg-yellow-400 text-black rounded-md'
+                                : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
                         "
                         @click="toggleDay('facebook', day.value)"
                     >
@@ -259,11 +248,13 @@
                     <UButton
                         v-if="posts.length === 0"
                         @click="generatePosts"
-                        color="yellow"
-                        class="bg-yellow-400 text-black hover:bg-yellow-300"
+                        class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
                         >Generate</UButton
                     >
-                    <UButton v-else color="gray" variant="soft" to="/posts"
+                    <UButton
+                        v-else
+                        to="/posts"
+                        class="bg-gray-700 text-white hover:bg-gray-600 rounded"
                         >Manage Posts</UButton
                     >
                 </div>
@@ -311,15 +302,14 @@
                             <td class="px-3 py-2">
                                 <UButton
                                     size="sm"
-                                    color="yellow"
                                     @click="updatePostStatus(p._id, 'approved')"
+                                    class="bg-yellow-400 text-black hover:bg-yellow-300 rounded mr-2"
                                     >Approve</UButton
                                 >
                                 <UButton
                                     size="sm"
-                                    variant="ghost"
-                                    color="gray"
                                     @click="previewPost(p)"
+                                    class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded"
                                     >Preview</UButton
                                 >
                             </td>
