@@ -1,6 +1,6 @@
 <template>
     <div class="space-y-6">
-        <!-- Month selector block -->
+        <!-- Month selector + Theme block (month select removed; only prev/next navigation remains) -->
         <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
             <div class="flex items-center justify-between">
                 <div>
@@ -8,10 +8,11 @@
                         Monthly Strategy
                     </h2>
                     <p class="text-sm text-gray-400">
-                        Select month for the strategy
+                        Browse months with arrows and edit the strategy theme
+                        below
                     </p>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 w-full">
                     <UButton
                         icon="i-heroicons-chevron-left"
                         @click="prevMonth"
@@ -25,6 +26,7 @@
                     >
                         {{ currentMonthLabel }}
                     </div>
+
                     <UButton
                         icon="i-heroicons-chevron-right"
                         @click="nextMonth"
@@ -33,15 +35,18 @@
                         color="gray"
                         size="sm"
                     />
-                    <USelect v-model="customMonth" size="sm" class="ml-3">
-                        <option
-                            v-for="m in monthOptions"
-                            :key="m.value"
-                            :value="m.value"
+
+                    <!-- Save button (posts to /strategy) -->
+                    <div class="ml-4">
+                        <UButton
+                            :loading="saving"
+                            color="yellow"
+                            @click="saveAndReload"
+                            class="bg-yellow-400 text-black"
                         >
-                            {{ m.label }}
-                        </option>
-                    </USelect>
+                            Save
+                        </UButton>
+                    </div>
                 </div>
             </div>
         </section>
@@ -50,11 +55,15 @@
         <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                 <div class="text-xs text-gray-400">Theme</div>
-                <UInput
-                    v-model="strategy.theme"
-                    placeholder="Short theme"
-                    class="mt-2"
-                />
+                <div class="mt-2 text-sm text-gray-200">
+                    <!-- Theme textarea moved here -->
+                    <UTextarea
+                        v-model="strategy.theme"
+                        placeholder="Enter the monthly theme..."
+                        rows="3"
+                        class="ml-4 flex-1"
+                    />
+                </div>
             </div>
 
             <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
@@ -132,14 +141,18 @@
         <!-- Schedules per platform row -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3 mb-2">
                     <div class="text-sm text-white font-semibold">LinkedIn</div>
-                    <div class="text-xs text-gray-400">
-                        Time:
-                        <span class="ml-1">{{
-                            strategy.schedule.linkedin.time || "--:--"
-                        }}</span>
-                    </div>
+                    <UInput
+                        v-model="strategy.schedule.linkedin.time"
+                        type="time"
+                        class="w-32"
+                    />
+                    <UInput
+                        v-model="strategy.schedule.linkedin.timezone"
+                        placeholder="Timezone"
+                        class="w-36"
+                    />
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <UButton
@@ -157,22 +170,27 @@
                                 : 'outline'
                         "
                         @click="toggleDay('linkedin', day.value)"
-                        >{{ day.label }}</UButton
                     >
+                        {{ day.label }}
+                    </UButton>
                 </div>
             </div>
 
             <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3 mb-2">
                     <div class="text-sm text-white font-semibold">
                         Instagram
                     </div>
-                    <div class="text-xs text-gray-400">
-                        Time:
-                        <span class="ml-1">{{
-                            strategy.schedule.instagram.time || "--:--"
-                        }}</span>
-                    </div>
+                    <UInput
+                        v-model="strategy.schedule.instagram.time"
+                        type="time"
+                        class="w-32"
+                    />
+                    <UInput
+                        v-model="strategy.schedule.instagram.timezone"
+                        placeholder="Timezone"
+                        class="w-36"
+                    />
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <UButton
@@ -190,20 +208,25 @@
                                 : 'outline'
                         "
                         @click="toggleDay('instagram', day.value)"
-                        >{{ day.label }}</UButton
                     >
+                        {{ day.label }}
+                    </UButton>
                 </div>
             </div>
 
             <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-3 mb-2">
                     <div class="text-sm text-white font-semibold">Facebook</div>
-                    <div class="text-xs text-gray-400">
-                        Time:
-                        <span class="ml-1">{{
-                            strategy.schedule.facebook.time || "--:--"
-                        }}</span>
-                    </div>
+                    <UInput
+                        v-model="strategy.schedule.facebook.time"
+                        type="time"
+                        class="w-32"
+                    />
+                    <UInput
+                        v-model="strategy.schedule.facebook.timezone"
+                        placeholder="Timezone"
+                        class="w-36"
+                    />
                 </div>
                 <div class="flex flex-wrap gap-2">
                     <UButton
@@ -221,8 +244,9 @@
                                 : 'outline'
                         "
                         @click="toggleDay('facebook', day.value)"
-                        >{{ day.label }}</UButton
                     >
+                        {{ day.label }}
+                    </UButton>
                 </div>
             </div>
         </section>
@@ -425,7 +449,8 @@ const canGoNext = computed(() => {
 const loadStrategy = async () => {
     loadingStrategy.value = true;
     try {
-        const res = await n8n.getStrategy({ month: currentMonthStr.value });
+        console.log("Fetching strategy for month:", currentMonthStr.value);
+        const res = await n8n.getStrategy(currentMonthStr.value);
         strategy.value = res.data || strategy.value;
     } catch (e) {
         console.warn("Strategy not found", e);
@@ -441,6 +466,19 @@ const saveStrategy = async () => {
         strategy.value = res.data;
     } catch (error) {
         console.error("Failed to save strategy:", error);
+    } finally {
+        saving.value = false;
+    }
+};
+
+const saveAndReload = async () => {
+    saving.value = true;
+    try {
+        // use POST /strategy to create/update and then reload
+        await n8n.saveStrategy(strategy.value);
+        await loadStrategy();
+    } catch (error) {
+        console.error("Failed to post strategy:", error);
     } finally {
         saving.value = false;
     }

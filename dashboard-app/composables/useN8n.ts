@@ -87,7 +87,7 @@ export const useN8n = () => {
   };
 
   const saveStrategy = async (data: any) => {
-    return callWebhook("webhook-test/strategy", data, "POST");
+    return callWebhook("webhook/strategy", data, "POST");
   };
 
   const generateContent = async (strategyId: string) => {

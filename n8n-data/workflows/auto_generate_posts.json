@@ -1,26 +1,7 @@
+nv_simple/n8n-data/workflows/auto_generate_posts.json#L1-999
 {
   "name": "Auto Generate Posts",
   "nodes": [
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "cronExpression",
-              "expression": "0 2 * * 0"
-            }
-          ]
-        }
-      },
-      "id": "schedule-trigger",
-      "name": "Schedule (Sunday 2AM)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.1,
-      "position": [
-        250,
-        300
-      ]
-    },
     {
       "parameters": {
         "httpMethod": "POST",
@@ -34,16 +15,20 @@
       "typeVersion": 1.1,
       "position": [
         250,
-        450
+        150
       ],
       "webhookId": "generate-posts-manual"
     },
     {
       "parameters": {
-        "url": "{BACKEND_URL}/api/strategies",
+        "url": "={BACKEND_URL}/api/strategies?filter={{ encodeURIComponent(JSON.stringify({ month: $json.body.month })) }}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
+            {
+              "name": "Authorization",
+              "value": "={{ $json.headers && $json.headers.authorization ? $json.headers.authorization : '' }}"
+            },
             {
               "name": "x-api-key",
               "value": "{X-API-KEY}"
@@ -52,39 +37,87 @@
         },
         "options": {}
       },
-      "id": "get-all-strategies",
-      "name": "Get All Strategies",
+      "id": "get-strategy-by-month",
+      "name": "Get Strategy by Month",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
         450,
-        375
+        150
       ]
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.items.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
         "options": {}
       },
-      "id": "split-strategies",
-      "name": "Split Strategies",
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
+      "id": "if-empty",
+      "name": "If Empty",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
       "position": [
         650,
-        375
+        150
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Check if posts need to be generated for this strategy\nconst strategy = $input.item.json;\nconst now = new Date();\nconst currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;\n\n// Only process current month strategies\nif (strategy.month !== currentMonth) {\n  return { skip: true, reason: 'Not current month' };\n}\n\nconst schedule = strategy.schedule || {};\nconst existingPosts = strategy.posts || [];\nconst postsToGenerate = [];\n\n// Get next 7 days\nconst daysToCheck = 7;\nconst dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };\n\nfor (let i = 0; i < daysToCheck; i++) {\n  const checkDate = new Date(now);\n  checkDate.setDate(checkDate.getDate() + i);\n  const dayOfWeek = checkDate.getDay();\n  \n  // Check each platform\n  ['linkedin', 'instagram', 'facebook'].forEach(platform => {\n    const config = schedule[platform];\n    if (!config) return;\n    \n    const scheduledDays = config.days.map(d => dayMap[d]);\n    if (!scheduledDays.includes(dayOfWeek)) return;\n    \n    // Set scheduled time\n    const [hours, minutes] = config.time.split(':').map(Number);\n    const scheduledDate = new Date(checkDate);\n    scheduledDate.setHours(hours, minutes, 0, 0);\n    \n    // Check if post already exists\n    const exists = existingPosts.some(p => \n      p.platform === platform.charAt(0).toUpperCase() + platform.slice(1) &&\n      new Date(p.scheduledDate).getTime() === scheduledDate.getTime()\n    );\n    \n    if (!exists) {\n      postsToGenerate.push({\n        platform: platform.charAt(0).toUpperCase() + platform.slice(1),\n        scheduledDate: scheduledDate.toISOString()\n      });\n    }\n  });\n}\n\nif (postsToGenerate.length === 0) {\n  return { skip: true, reason: 'No posts to generate' };\n}\n\nreturn {\n  skip: false,\n  strategyId: strategy._id,\n  strategy: strategy,\n  postsToGenerate: postsToGenerate\n};"
+        "respondWith": "json",
+        "responseBody": "={ JSON.stringify({ error: 'Strategy not found for month' }) }",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "id": "respond-not-found",
+      "name": "Respond Not Found",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        850,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract the strategy from API response\nconst strategy = $json.items && $json.items[0] ? $json.items[0] : null;\nreturn { strategy };"
+      },
+      "id": "extract-strategy",
+      "name": "Extract Strategy",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        850,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compute missing scheduled posts for the whole month\nconst strategy = $('Extract Strategy').item.json.strategy;\nif (!strategy) return { postsToGenerate: [], strategy: null };\nconst schedule = strategy.schedule || {};\nconst existingPosts = strategy.posts || [];\nconst monthStr = strategy.month; // expecting YYYY-MM\nconst [year, monthNum] = monthStr.split('-').map(Number);\nconst daysInMonth = new Date(year, monthNum, 0).getDate();\nconst dayMap = { 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6 };\nconst postsToGenerate = [];\n\nfor (let d = 1; d <= daysInMonth; d++) {\n  const date = new Date(year, monthNum - 1, d);\n  const dayOfWeek = date.getDay();\n  Object.keys(schedule).forEach(platformKey => {\n    const cfg = schedule[platformKey];\n    if (!cfg || !cfg.days) return;\n    const scheduledDays = cfg.days.map(x => dayMap[x]);\n    if (!scheduledDays.includes(dayOfWeek)) return;\n    const [hours, minutes] = (cfg.time || '09:00').split(':').map(Number);\n    const sched = new Date(date);\n    sched.setHours(hours, minutes, 0, 0);\n    const iso = sched.toISOString();\n    const platformName = platformKey.charAt(0).toUpperCase() + platformKey.slice(1);\n    const exists = existingPosts.some(p => p.platform === platformName && new Date(p.scheduledDate).getTime() === sched.getTime());\n    if (!exists) {\n      postsToGenerate.push({ platform: platformName, scheduledDate: iso, platformKey });\n    }\n  });\n}\n\nreturn { strategy: strategy, postsToGenerate };"
       },
       "id": "check-posts-needed",
       "name": "Check Posts Needed",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        850,
-        375
+        1050,
+        250
       ]
     },
     {
@@ -92,8 +125,8 @@
         "conditions": {
           "boolean": [
             {
-              "value1": "={{ $json.skip }}",
-              "value2": false
+              "value1": "={{ $json.postsToGenerate.length }}",
+              "value2": 0
             }
           ]
         }
@@ -103,8 +136,23 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
       "position": [
-        1050,
-        375
+        1250,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'No posts to generate', strategy: $json.strategy }) }}",
+        "options": {}
+      },
+      "id": "respond-no-posts",
+      "name": "Respond No Posts",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1450,
+        200
       ]
     },
     {
@@ -116,20 +164,20 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1250,
+        1450,
         300
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Prepare prompt for content generation\nconst strategy = $('Check Posts Needed').item.json.strategy;\nconst post = $input.item.json;\n\nconst prompt = `Create engaging social media content for ${post.platform}.\n\nStrategy Theme: ${strategy.theme}\nContent Pillars: ${JSON.stringify(strategy.pillars)}\nTopics: ${strategy.topics.join(', ')}\n\nPlatform: ${post.platform}\nScheduled Date: ${post.scheduledDate}\n\nGenerate a compelling post that aligns with our content strategy. Include relevant hashtags and call-to-action.`;\n\nreturn {\n  prompt: prompt,\n  platform: post.platform,\n  scheduledDate: post.scheduledDate,\n  strategyId: strategy._id\n};"
+        "jsCode": "// Prepare prompt for content generation\nconst strategy = $('Check Posts Needed').item.json.strategy || {};\nconst post = $input.item.json;\nconst prompt = `Create engaging social media content for ${post.platform}.\n\nStrategy Theme: ${strategy.theme}\nContent Pillars: ${JSON.stringify(strategy.pillars)}\nTopics: ${(strategy.topics||[]).join(', ')}\n\nPlatform: ${post.platform}\nScheduled Date: ${post.scheduledDate}\n\nGenerate a compelling post that aligns with our content strategy. Include relevant hashtags and call-to-action.`;\nreturn { prompt: prompt, platform: post.platform, scheduledDate: post.scheduledDate, strategyId: strategy._id || strategy.id || strategyId };"
       },
       "id": "prepare-prompt",
       "name": "Prepare Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1450,
+        1650,
         300
       ]
     },
@@ -150,7 +198,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1,
       "position": [
-        1650,
+        1850,
         300
       ],
       "credentials": {
@@ -173,7 +221,7 @@
       "type": "n8n-nodes-base.openAi",
       "typeVersion": 1,
       "position": [
-        1850,
+        2050,
         300
       ],
       "credentials": {
@@ -201,7 +249,7 @@
           "parameters": [
             {
               "name": "image",
-              "value": "={{ $json.data[0].url }}"
+              "value": "={{ $json.data && $json.data[0] ? $json.data[0].url : '' }}"
             },
             {
               "name": "filename",
@@ -216,20 +264,20 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        2050,
+        2250,
         300
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Prepare post data\nconst content = $('Generate Content (OpenAI)').item.json.message.content;\nconst imagePath = $json.path;\nconst prepData = $('Prepare Prompt').item.json;\n\nreturn {\n  platform: prepData.platform,\n  scheduledDate: prepData.scheduledDate,\n  content: content,\n  image: imagePath,\n  status: 'pending',\n  generatedAt: new Date().toISOString()\n};"
+        "jsCode": "// Prepare post data from generated content and saved image\nconst gen = $('Generate Content (OpenAI)').item.json;\nlet content = '';\nif (gen.message && gen.message.content) content = gen.message.content;\nelse if (gen.choices && gen.choices[0] && gen.choices[0].message) content = gen.choices[0].message.content || '';\nelse if (gen.choices && gen.choices[0] && gen.choices[0].text) content = gen.choices[0].text || '';\n\nconst imageResp = $json;\nconst imageUrl = imageResp && (imageResp.url || imageResp.path || (imageResp.items && imageResp.items[0] && imageResp.items[0].url)) ? (imageResp.url || imageResp.path || imageResp.items[0].url) : ($json.data && $json.data[0] ? $json.data[0].url : '');\nconst prep = $('Prepare Prompt').item.json;\nreturn { platform: prep.platform, scheduledDate: prep.scheduledDate, content: content, image: imageUrl, status: 'pending', generatedAt: new Date().toISOString() };"
       },
       "id": "prepare-post-data",
       "name": "Prepare Post Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2250,
+        2450,
         300
       ]
     },
@@ -253,20 +301,20 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        2450,
+        2650,
         300
       ]
     },
     {
       "parameters": {
-        "jsCode": "// Add new post to strategy\nconst strategy = $json;\nconst newPost = $('Prepare Post Data').item.json;\n\nif (!strategy.posts) strategy.posts = [];\nstrategy.posts.push(newPost);\n\nreturn { posts: strategy.posts };"
+        "jsCode": "// Add new post to the strategy and return updated strategy object\nconst strategy = $json;\nconst newPost = $('Prepare Post Data').item.json;\nif (!strategy.posts) strategy.posts = [];\nstrategy.posts.push(newPost);\nreturn strategy;"
       },
       "id": "add-post",
       "name": "Add Post to Strategy",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2650,
+        2850,
         300
       ]
     },
@@ -293,14 +341,14 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
       "position": [
-        2850,
+        3050,
         300
       ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ success: true, message: 'Posts generated' }) }}",
+        "responseBody": "={{ JSON.stringify($json) }}",
         "options": {}
       },
       "id": "respond",
@@ -308,57 +356,62 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        3050,
-        375
+        3250,
+        300
       ]
     }
   ],
   "connections": {
-    "Schedule (Sunday 2AM)": {
-      "main": [
-        [
-          {
-            "node": "Get All Strategies",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Webhook Trigger": {
       "main": [
         [
           {
-            "node": "Get All Strategies",
+            "node": "Get Strategy by Month",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get All Strategies": {
+    "Get Strategy by Month": {
       "main": [
         [
           {
-            "node": "Split Strategies",
+            "node": "If Empty",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Strategy",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Split Strategies": {
+    "If Empty": {
       "main": [
         [
           {
-            "node": "Check Posts Needed",
+            "node": "Respond Not Found",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Respond",
+            "node": "Extract Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Strategy": {
+      "main": [
+        [
+          {
+            "node": "Check Posts Needed",
             "type": "main",
             "index": 0
           }
@@ -378,7 +431,13 @@
     },
     "If Posts Needed": {
       "main": [
-        [],
+        [
+          {
+            "node": "Respond No Posts",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Split Posts to Generate",
@@ -481,6 +540,11 @@
         [
           {
             "node": "Split Posts to Generate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond",
             "type": "main",
             "index": 0
           }
