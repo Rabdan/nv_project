@@ -308,7 +308,7 @@
                             <td class="px-3 py-2">
                                 <UButton
                                     size="sm"
-                                    @click="updatePostStatus(p._id, 'approved')"
+                                    @click="updatePostStatus(p, 'approved')"
                                     class="bg-yellow-400 text-black hover:bg-yellow-300 rounded mr-2"
                                     >Approve</UButton
                                 >
@@ -317,6 +317,12 @@
                                     @click="previewPost(p)"
                                     class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded"
                                     >Preview</UButton
+                                >
+                                <UButton
+                                    size="sm"
+                                    @click="deletePost(p)"
+                                    class="bg-red-400 text-black hover:bg-red-700 rounded mr-2"
+                                    >Delete</UButton
                                 >
                             </td>
                         </tr>
@@ -464,6 +470,30 @@ const saveStrategy = async () => {
         console.error("Failed to save strategy:", error);
     } finally {
         saving.value = false;
+    }
+};
+
+const updatePostStatus = async (post, status) => {
+    try {
+        const postId = post.platform + "-" + post.scheduledDate;
+        const res = await n8n.updatePostStatus(
+            strategy.value.month,
+            postId,
+            status,
+        );
+        strategy.value = res.data;
+    } catch (error) {
+        console.error("Failed to update post status:", error);
+    }
+};
+
+const deletePost = async (post) => {
+    try {
+        const postId = post.platform + "-" + post.scheduledDate;
+        const res = await n8n.deletePost(strategy.value.month, postId);
+        strategy.value = res.data;
+    } catch (error) {
+        console.error("Failed to update post status:", error);
     }
 };
 

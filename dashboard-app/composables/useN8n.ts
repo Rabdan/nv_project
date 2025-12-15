@@ -98,8 +98,20 @@ export const useN8n = () => {
     return callWebhook("webhook-test/publish", { postId }, "POST");
   };
 
-  const updatePostStatus = async (postId: string, status: string) => {
-    return callWebhook("webhook-test/post/status", { postId, status }, "POST");
+  const updatePostStatus = async (
+    month: string,
+    postId: string,
+    status: string,
+  ) => {
+    return callWebhook(
+      "webhook/post/status",
+      { month, postId, status },
+      "POST",
+    );
+  };
+
+  const deletePost = async (month: string, postId: string) => {
+    return callWebhook("webhook/post/delete", { month, postId }, "POST");
   };
 
   /**
@@ -128,6 +140,7 @@ export const useN8n = () => {
     generateContent,
     publishContent,
     updatePostStatus,
+    deletePost,
     registerUser,
   };
 };
