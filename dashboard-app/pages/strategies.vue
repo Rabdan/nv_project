@@ -253,10 +253,16 @@
                     >
                     <UButton
                         v-else
+                        @click="generatePosts"
+                        class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
+                        >Re-Generate</UButton
+                    >
+                    <!--UButton
+                        v-else
                         to="/posts"
                         class="bg-gray-700 text-white hover:bg-gray-600 rounded"
                         >Manage Posts</UButton
-                    >
+                    -->
                 </div>
             </div>
 
