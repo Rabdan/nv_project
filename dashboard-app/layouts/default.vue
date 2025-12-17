@@ -85,30 +85,6 @@
                     </UButton>
                 </div>
 
-                <!-- Scheduling / Queue -->
-                <div
-                    :class="[
-                        'relative rounded-md overflow-hidden',
-                        isActive('/scheduling') ? 'bg-gray-800' : '',
-                    ]"
-                >
-                    <div
-                        v-if="isActive('/scheduling')"
-                        class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
-                        :style="{
-                            background:
-                                'linear-gradient(180deg, var(--nv-accent), var(--nv-accent-600))',
-                        }"
-                    ></div>
-                    <UButton
-                        to="/scheduling"
-                        icon="i-heroicons-clock"
-                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200 pl-4"
-                    >
-                        Scheduling
-                    </UButton>
-                </div>
-
                 <!-- Integrations & Settings -->
                 <div
                     :class="[
@@ -241,15 +217,6 @@
                         @click="mobileSidebarOpen = false"
                     >
                         Content & Approval
-                    </UButton>
-
-                    <UButton
-                        to="/scheduling"
-                        icon="i-heroicons-clock"
-                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
-                        @click="mobileSidebarOpen = false"
-                    >
-                        Scheduling
                     </UButton>
 
                     <UButton
