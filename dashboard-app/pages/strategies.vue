@@ -3,7 +3,7 @@
         <!-- Month selector + Theme block -->
         <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
             <div class="flex items-center justify-between">
-                <div>
+                <div class="pr-5 gap-2">
                     <h2 class="text-lg font-semibold text-white">
                         Monthly Strategy & Planning
                     </h2>
@@ -13,11 +13,11 @@
                     </p>
                 </div>
 
-                <div class="flex items-center gap-3 w-full">
+                <div class="flex items-center gap-2">
                     <UButton
                         icon="i-heroicons-chevron-left"
-                        @click="prevMonth"
-                        :disabled="!canGoPrev"
+                        @click="nextMonth"
+                        :disabled="!canGoNext"
                         size="sm"
                         class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
                     />
@@ -34,7 +34,7 @@
                             <div class="flex items-center gap-2">
                                 <div class="text-sm">{{ item.label }}</div>
                                 <div class="text-xs text-gray-400 truncate">
-                                    — {{ item.theme || "No theme" }}
+                                    — {{ item.theme || "New strategy" }}
                                 </div>
                             </div>
                         </template>
@@ -42,13 +42,13 @@
 
                     <UButton
                         icon="i-heroicons-chevron-right"
-                        @click="nextMonth"
-                        :disabled="!canGoNext"
+                        @click="prevMonth"
+                        :disabled="!canGoPrev"
                         size="sm"
                         class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
                     />
 
-                    <div class="ml-auto flex items-center gap-2">
+                    <div class="ml-auto flex items-center gap-2 w-40 pl-4">
                         <UButton
                             :loading="saving"
                             @click="saveAndReload"
@@ -425,9 +425,6 @@ const isStrategyComplete = computed(() => {
 
 const posts = computed(() => strategy.value?.posts || []);
 
-const today = new Date();
-const actualCurrentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-
 // helpers to navigate strategiesList
 const currentIndex = computed(() =>
     strategiesList.value.findIndex((s) => s.month === customMonth.value),
@@ -452,6 +449,25 @@ const loadStrategiesList = async () => {
             theme: r.theme || "",
             postsCount: (r.posts || []).length || 0,
         }));
+
+        // Add future months (current month through +6 months) marked as "New".
+        // Do not add past months.
+        const now = new Date();
+        const existing = new Set(arr.map((a) => a.month));
+        for (let i = 0; i <= 6; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+            const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            if (existing.has(val)) continue;
+            const label =
+                d.toLocaleString("default", {
+                    month: "short",
+                    year: "numeric",
+                }) + " New";
+            arr.push({ month: val, label, theme: "", postsCount: 0 });
+        }
+
+        // Sort newest first so default selection picks the latest month
+        arr.sort((a, b) => b.month.localeCompare(a.month));
         strategiesList.value = arr;
 
         // if route has ?month, prioritize it
@@ -459,7 +475,7 @@ const loadStrategiesList = async () => {
             customMonth.value = String(route.query.month);
         } else if (!customMonth.value && strategiesList.value.length) {
             // default to latest (first) if not set
-            customMonth.value = strategiesList.value[0].month;
+            customMonth.value = currentMonthStr.value;
         } else if (
             customMonth.value &&
             !strategiesList.value.find((s) => s.month === customMonth.value)
@@ -686,7 +702,8 @@ watch(
     (v) => {
         if (!v) return;
         // update query param and load strategy
-        router.replace({ query: { ...route.query, month: v } }).catch(() => {});
+        //router.replace({ query: { ...route.query, month: v } }).catch(() => {});
+        customMonth.value = v;
         loadStrategy();
     },
 );
@@ -694,12 +711,21 @@ watch(
 onMounted(() => {
     // load available strategies then load current strategy
     loadStrategiesList().then(() => {
-        // if customMonth still empty, ensure we have a sensible default
+        // if customMonth still empty, prefer the actual current month (today)
+        console.log("currentMonthStr.value:", currentMonthStr.value);
         if (!customMonth.value) {
-            customMonth.value = strategiesList.value.length
-                ? strategiesList.value[0].month
-                : currentMonthStr.value;
+            const nowMonth = currentMonthStr.value;
+            // if the current month exists in the list (should, after augmentation), use it;
+            // otherwise fall back to the newest available or computed current month
+            customMonth.value = strategiesList.value.find(
+                (s) => s.month === nowMonth,
+            )
+                ? nowMonth
+                : strategiesList.value.length
+                  ? strategiesList.value[0].month
+                  : currentMonthStr.value;
         }
+        console.log("customMonth.value:", customMonth);
         loadStrategy();
     });
 });
