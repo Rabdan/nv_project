@@ -1,19 +1,22 @@
 {
-  "name": "Update Post Status",
+  "name": "Delete Post",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "post/status",
+        "path": "post/delete",
         "responseMode": "responseNode",
         "options": {}
       },
-      "id": "webhook-status",
+      "id": "webhook-delete",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1.1,
-      "position": [256, 304],
-      "webhookId": "update-post-status"
+      "position": [
+        -200,
+        0
+      ],
+      "webhookId": "delete-post"
     },
     {
       "parameters": {
@@ -37,17 +40,23 @@
       "name": "Find Strategy",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [464, 304]
+      "position": [
+        40,
+        0
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Update post status\nconst strategy = $input.item.json.items && $input.item.json.items[0] ? $input.item.json.items[0] : null;\nconst { postId, status } = $('Webhook').first().json.body;\n\nif (!strategy) throw new Error('Strategy not found');\n\n// In backup workflow postId is a composite key: platform + \"-\" + scheduledDate\nconst postIndex = strategy.posts.findIndex(p => (p.platform + \"-\" + p.scheduledDate) === postId);\nif (postIndex !== -1) {\n  strategy.posts[postIndex].status = status;\n  strategy.posts[postIndex].updatedAt = new Date().toISOString();\n}\n\nreturn strategy;"
+        "jsCode": "// Delete post from strategy posts array\nconst strategy = $input.item.json.items && $input.item.json.items[0] ? $input.item.json.items[0] : null;\nconst { postId } = $('Webhook').first().json.body;\n\nif (!strategy) throw new Error('Strategy not found');\n\n// Remove posts matching composite key platform-scheduledDate or matching _id\nlet preparedPosts = (strategy.posts || []).filter(p => {\n  const composite = (p.platform || '') + '-' + (p.scheduledDate || '');\n  return composite !== postId && p._id !== postId;\n});\n\nstrategy.posts = preparedPosts;\n\nreturn strategy;"
       },
-      "id": "update-status",
-      "name": "Update Status",
+      "id": "delete-post",
+      "name": "Delete Post",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [656, 304]
+      "position": [
+        220,
+        0
+      ]
     },
     {
       "parameters": {
@@ -75,19 +84,25 @@
       "name": "Save Strategy",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [864, 304]
+      "position": [
+        440,
+        0
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ success: true, message: 'Status updated' }) }}",
+        "responseBody": "={{ JSON.stringify({ success: true, message: 'Post deleted' }) }}",
         "options": {}
       },
       "id": "respond",
       "name": "Respond",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1056, 304]
+      "position": [
+        660,
+        0
+      ]
     }
   ],
   "connections": {
@@ -106,14 +121,14 @@
       "main": [
         [
           {
-            "node": "Update Status",
+            "node": "Delete Post",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Update Status": {
+    "Delete Post": {
       "main": [
         [
           {
@@ -142,5 +157,7 @@
     "availableInMCP": false
   },
   "versionId": "1",
-  "meta": {}
+  "meta": {},
+  "id": "delete-post-workflow",
+  "tags": []
 }

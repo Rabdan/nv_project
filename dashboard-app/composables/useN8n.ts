@@ -14,14 +14,18 @@ export const useN8n = () => {
   });
 
   // Request Interceptor
-  n8nApi.interceptors.request.use((config) => {
+  n8nApi.interceptors.request.use((cfg) => {
     const token = localStorage.getItem("jwt_token");
     if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+      // guard in case headers object is missing
+      cfg.headers = cfg.headers || {};
+      cfg.headers["Authorization"] = `Bearer ${token}`;
     }
-    console.log(mode);
-    console.log(config);
-    return config;
+    // keep logging minimal in production
+    if (mode !== "production") {
+      console.log("n8n request:", cfg.method, cfg.url);
+    }
+    return cfg;
   });
 
   // Response Interceptor for 401
@@ -43,7 +47,7 @@ export const useN8n = () => {
       { username, password },
       "POST",
     );
-    const token = res.data.token;
+    const token = res.data?.token;
 
     if (!token) {
       localStorage.removeItem("jwt_token");
@@ -69,10 +73,12 @@ export const useN8n = () => {
   };
 
   // Strategy methods
-  const callWebhook = (path: string, data = {}, method = "GET") => {
+  const callWebhook = (path: string, data: any = {}, method = "GET") => {
     // In development: use proxy (relative path)
     // In production: use direct N8N URL
-    const url = mode === "production" ? `${n8nBaseUrl}/${path}` : `/${path}`;
+    let url = mode === "production" ? `${n8nBaseUrl}/${path}` : `/${path}`;
+    // normalize double slashes
+    url = url.replace(/([^:]\/)\/+/g, "$1");
 
     return n8nApi({
       method,
@@ -82,22 +88,47 @@ export const useN8n = () => {
     });
   };
 
+  const getStrategies = async () => {
+    return callWebhook("webhook/list-strategies", {}, "GET");
+  };
+  // Flexible helper: accept either a string month or an object { month }
   const getStrategy = async (month: string) => {
-    return callWebhook("webhook/strategy", { month }, "GET");
+    // If month is undefined, call without params so backend can decide default
+    return callWebhook("webhook/strategy", month ? month : "", "GET");
   };
 
   const saveStrategy = async (data: any) => {
     return callWebhook("webhook/strategy", data, "POST");
   };
 
+  // generateContent: accept string or object
   const generateContent = async (month: string) => {
-    return callWebhook("webhook/generate-posts", { month }, "POST");
+    return callWebhook(
+      "webhook/generate-posts",
+      month ? { month } : {},
+      "POST",
+    );
   };
 
-  const publishContent = async (postId: string) => {
-    return callWebhook("webhook-test/publish", { postId }, "POST");
+  /**
+   * publishContent
+   * Accepts flexible signatures used across the app:
+   *  - publishContent(postId)
+   *  - publishContent(month, postId)
+   */
+  const publishContent = async (month: string, postId: string) => {
+    if (!month) {
+      return callWebhook("webhook-test/publish", { postId }, "POST");
+    } else {
+      return callWebhook("webhook-test/publish", { month, postId }, "POST");
+    }
   };
 
+  /**
+   * updatePostStatus
+   * Supports:
+   *  - updatePostStatus(month, postId, status)
+   */
   const updatePostStatus = async (
     month: string,
     postId: string,
@@ -110,6 +141,11 @@ export const useN8n = () => {
     );
   };
 
+  /**
+   * deletePost
+   * Supports:
+   *  - deletePost(month, postId)
+   */
   const deletePost = async (month: string, postId: string) => {
     return callWebhook("webhook/post/delete", { month, postId }, "POST");
   };
@@ -136,6 +172,7 @@ export const useN8n = () => {
     login,
     logout,
     getStrategy,
+    getStrategies,
     saveStrategy,
     generateContent,
     publishContent,

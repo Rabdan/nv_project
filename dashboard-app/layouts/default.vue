@@ -1,53 +1,147 @@
 <template>
     <div class="min-h-screen flex">
-        <!-- Desktop Sidebar -->
+        <!-- Desktop Sidebar (reworked layout & structure) -->
         <aside
-            class="hidden sm:flex w-64 flex-col bg-gray-900 text-gray-100 border-r border-gray-800"
+            class="hidden sm:flex w-72 flex-col sidebar text-gray-100 border-r border-gray-800"
         >
             <div
                 class="px-4 py-6 flex items-center gap-3 border-b border-gray-800"
             >
-                <h1 class="text-2xl font-bold text-yellow-400">NeuroVision</h1>
+                <h1 class="text-2xl font-bold" style="color: var(--nv-accent)">
+                    CIVI NeuroVision
+                </h1>
             </div>
 
             <nav class="flex-1 px-2 py-4 space-y-1">
-                <UButton
-                    to="/strategies"
-                    icon="i-heroicons-chart-bar"
-                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
+                <!-- Dashboard / Analytics -->
+                <div
+                    :class="[
+                        'relative rounded-md overflow-hidden',
+                        isActive('/analysis') ? 'bg-gray-800' : '',
+                    ]"
                 >
-                    Strategies
-                </UButton>
+                    <div
+                        v-if="isActive('/analysis')"
+                        class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                        :style="{
+                            background:
+                                'linear-gradient(180deg, var(--nv-accent), var(--nv-accent-600))',
+                        }"
+                    ></div>
+                    <UButton
+                        to="/analysis"
+                        icon="i-heroicons-chart-pie"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200 pl-4"
+                    >
+                        Dashboard
+                    </UButton>
+                </div>
 
-                <UButton
-                    to="/posts"
-                    icon="i-heroicons-document-text"
-                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
+                <!-- Strategy -->
+                <div
+                    :class="[
+                        'relative rounded-md overflow-hidden',
+                        isActive('/strategies') ? 'bg-gray-800' : '',
+                    ]"
                 >
-                    Posts
-                </UButton>
+                    <div
+                        v-if="isActive('/strategies')"
+                        class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                        :style="{
+                            background:
+                                'linear-gradient(180deg, var(--nv-accent), var(--nv-accent-600))',
+                        }"
+                    ></div>
+                    <UButton
+                        to="/strategies"
+                        icon="i-heroicons-chart-bar"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200 pl-4"
+                    >
+                        Strategy
+                    </UButton>
+                </div>
 
-                <UButton
-                    to="/analysis"
-                    icon="i-heroicons-chart-pie"
-                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
+                <!-- Content / Approval -->
+                <div
+                    :class="[
+                        'relative rounded-md overflow-hidden',
+                        isActive('/posts') ? 'bg-gray-800' : '',
+                    ]"
                 >
-                    Analysis
-                </UButton>
+                    <div
+                        v-if="isActive('/posts')"
+                        class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                        :style="{
+                            background:
+                                'linear-gradient(180deg, var(--nv-accent), var(--nv-accent-600))',
+                        }"
+                    ></div>
+                    <UButton
+                        to="/posts"
+                        icon="i-heroicons-document-text"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200 pl-4"
+                    >
+                        Content & Approval
+                    </UButton>
+                </div>
 
-                <UButton
-                    to="/settings"
-                    icon="i-heroicons-cog-6-tooth"
-                    class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
+                <!-- Scheduling / Queue -->
+                <div
+                    :class="[
+                        'relative rounded-md overflow-hidden',
+                        isActive('/scheduling') ? 'bg-gray-800' : '',
+                    ]"
                 >
-                    Settings
-                </UButton>
+                    <div
+                        v-if="isActive('/scheduling')"
+                        class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                        :style="{
+                            background:
+                                'linear-gradient(180deg, var(--nv-accent), var(--nv-accent-600))',
+                        }"
+                    ></div>
+                    <UButton
+                        to="/scheduling"
+                        icon="i-heroicons-clock"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200 pl-4"
+                    >
+                        Scheduling
+                    </UButton>
+                </div>
+
+                <!-- Integrations & Settings -->
+                <div
+                    :class="[
+                        'relative rounded-md overflow-hidden',
+                        isActive('/integrations') || isActive('/settings')
+                            ? 'bg-gray-800'
+                            : '',
+                    ]"
+                >
+                    <div
+                        v-if="
+                            isActive('/integrations') || isActive('/settings')
+                        "
+                        class="absolute left-0 top-0 bottom-0 w-1 rounded-r"
+                        :style="{
+                            background:
+                                'linear-gradient(180deg, var(--nv-accent), var(--nv-accent-600))',
+                        }"
+                    ></div>
+                    <UButton
+                        to="/integrations"
+                        icon="i-heroicons-puzzle"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200 pl-4"
+                    >
+                        Integrations & Settings
+                    </UButton>
+                </div>
             </nav>
 
             <div class="px-4 py-4 border-t border-gray-800">
                 <UButton
                     icon="i-heroicons-arrow-right-on-rectangle"
-                    class="w-full justify-center bg-yellow-400 text-black hover:bg-yellow-300"
+                    class="w-full justify-center btn-primary"
                     @click="handleLogout"
                 >
                     Logout
@@ -65,8 +159,11 @@
                             class="bg-transparent text-gray-300 hover:bg-gray-700 rounded-md"
                             @click="toggleMobileSidebar"
                         />
-                        <h1 class="text-lg font-bold text-yellow-400">
-                            NeuroVision
+                        <h1
+                            class="text-lg font-bold"
+                            style="color: var(--nv-accent)"
+                        >
+                            CIVI NeuroVision
                         </h1>
                     </div>
                 </template>
@@ -79,7 +176,8 @@
                                     ? 'i-heroicons-moon-20-solid'
                                     : 'i-heroicons-sun-20-solid'
                             "
-                            class="text-yellow-400 bg-transparent hover:bg-yellow-500/10 rounded-md"
+                            class="bg-transparent rounded-md"
+                            :style="{ color: 'var(--nv-accent)' }"
                             aria-label="Theme"
                             @click="isDark = !isDark"
                         />
@@ -88,7 +186,11 @@
                     <UAvatar
                         alt="Admin"
                         size="sm"
-                        class="bg-yellow-400 text-black"
+                        class=""
+                        :style="{
+                            background: 'var(--nv-accent)',
+                            color: 'black',
+                        }"
                     />
                 </template>
             </UDashboardNavbar>
@@ -111,16 +213,25 @@
         <transition name="slide">
             <aside
                 v-if="mobileSidebarOpen"
-                class="fixed z-50 inset-y-0 left-0 w-64 bg-gray-900 p-4 sm:hidden"
+                class="fixed z-50 inset-y-0 left-0 w-72 bg-[#121212] p-4 sm:hidden"
             >
                 <nav class="space-y-2">
+                    <UButton
+                        to="/analysis"
+                        icon="i-heroicons-chart-pie"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
+                        @click="mobileSidebarOpen = false"
+                    >
+                        Dashboard
+                    </UButton>
+
                     <UButton
                         to="/strategies"
                         icon="i-heroicons-chart-bar"
                         class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                         @click="mobileSidebarOpen = false"
                     >
-                        Strategies
+                        Strategy
                     </UButton>
 
                     <UButton
@@ -129,16 +240,25 @@
                         class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                         @click="mobileSidebarOpen = false"
                     >
-                        Posts
+                        Content & Approval
                     </UButton>
 
                     <UButton
-                        to="/settings"
-                        icon="i-heroicons-cog-6-tooth"
+                        to="/scheduling"
+                        icon="i-heroicons-clock"
                         class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
                         @click="mobileSidebarOpen = false"
                     >
-                        Settings
+                        Scheduling
+                    </UButton>
+
+                    <UButton
+                        to="/integrations"
+                        icon="i-heroicons-puzzle"
+                        class="w-full justify-start text-left bg-transparent hover:bg-gray-800 text-gray-200"
+                        @click="mobileSidebarOpen = false"
+                    >
+                        Integrations & Settings
                     </UButton>
                 </nav>
             </aside>
@@ -149,6 +269,7 @@
 <script setup lang="ts">
 const colorMode = useColorMode();
 const { logout } = useN8n();
+const route = useRoute();
 
 // Ensure dark theme by default
 onMounted(() => {
@@ -169,6 +290,18 @@ const isDark = computed({
         colorMode.preference = val ? "dark" : "light";
     },
 });
+
+/**
+ * Simple helper to determine the active route for sidebar highlighting.
+ * Uses startsWith so child routes still activate their parent menu.
+ */
+const isActive = (path: string) => {
+    try {
+        return !!route.path && route.path.startsWith(path);
+    } catch (e) {
+        return false;
+    }
+};
 
 const handleLogout = () => {
     logout();

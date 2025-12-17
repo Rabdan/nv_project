@@ -1,25 +1,18 @@
 <template>
-    <!-- Safelist dynamic UButton colors so Tailwind includes them (keep these commented examples) -->
-    <!-- <UButton color="yellow" /> -->
-    <!-- <UButton color="gray" /> -->
-    <!-- <UButton color="blue" /> -->
-    <!-- <UButton color="pink" /> -->
-    <!-- <UButton color="purple" /> -->
-    <!-- <UButton color="green" /> -->
-
     <div class="space-y-6">
-        <!-- Month selector + Theme block (month select removed; only prev/next navigation remains) -->
+        <!-- Month selector + Theme block -->
         <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="text-lg font-semibold text-white">
-                        Monthly Strategy
+                        Monthly Strategy & Planning
                     </h2>
                     <p class="text-sm text-gray-400">
-                        Browse months with arrows and edit the strategy theme
-                        below
+                        Select a month, edit the theme, pillars and topics — all
+                        in a single panel for quick planning.
                     </p>
                 </div>
+
                 <div class="flex items-center gap-3 w-full">
                     <UButton
                         icon="i-heroicons-chevron-left"
@@ -28,11 +21,24 @@
                         size="sm"
                         class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
                     />
-                    <div
-                        class="px-3 py-2 bg-gray-900 rounded text-white font-medium"
+
+                    <USelect
+                        v-model="customMonth"
+                        :items="strategiesList"
+                        placeholder="Select month"
+                        value-key="month"
+                        :ui="{ content: 'min-w-fit' }"
+                        class="w-52"
                     >
-                        {{ currentMonthLabel }}
-                    </div>
+                        <template #item-label="{ item }">
+                            <div class="flex items-center gap-2">
+                                <div class="text-sm">{{ item.label }}</div>
+                                <div class="text-xs text-gray-400 truncate">
+                                    — {{ item.theme || "No theme" }}
+                                </div>
+                            </div>
+                        </template>
+                    </USelect>
 
                     <UButton
                         icon="i-heroicons-chevron-right"
@@ -42,14 +48,13 @@
                         class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
                     />
 
-                    <!-- Save button (posts to /strategy) -->
-                    <div class="ml-4">
+                    <div class="ml-auto flex items-center gap-2">
                         <UButton
                             :loading="saving"
                             @click="saveAndReload"
                             class="bg-yellow-400 text-black hover:bg-yellow-300"
                         >
-                            Save
+                            Save Strategy
                         </UButton>
                     </div>
                 </div>
@@ -57,92 +62,113 @@
         </section>
 
         <!-- Theme / Pillars / Topics row -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-xs text-gray-400">Theme</div>
-                <div class="mt-2 text-sm text-gray-200">
-                    <!-- Theme textarea moved here -->
-                    <UTextarea
-                        v-model="strategy.theme"
-                        placeholder="Enter the monthly theme..."
-                        rows="3"
-                        class="ml-4 flex-1"
-                    />
-                </div>
-            </div>
-
-            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-xs text-gray-400 mb-2">Pillars (%)</div>
-                <div class="space-y-2">
-                    <div
-                        v-for="(value, key) in strategy.pillars"
-                        :key="key"
-                        class="flex items-center justify-between"
-                    >
-                        <div class="capitalize text-gray-300 text-sm">
-                            {{ key.replace("_", " ") }}
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <UButton
-                                icon="i-heroicons-minus"
-                                size="xs"
-                                @click="decrementPillar(key)"
-                                :disabled="strategy.pillars[key] <= 0"
-                                class="bg-gray-700 text-white hover:bg-gray-600 rounded"
-                            />
-                            <div class="w-10 text-center text-white">
-                                {{ strategy.pillars[key] }}
-                            </div>
-                            <UButton
-                                icon="i-heroicons-plus"
-                                size="xs"
-                                @click="incrementPillar(key)"
-                                :disabled="strategy.pillars[key] >= 100"
-                                class="bg-gray-700 text-white hover:bg-gray-600 rounded"
-                            />
-                        </div>
+        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col gap-4">
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="text-xs text-gray-400">Theme</div>
+                    <div class="mt-2 text-sm text-gray-200">
+                        <UTextarea
+                            v-model="strategy.theme"
+                            placeholder="Enter the monthly theme..."
+                            :rows="3"
+                            class="ml-4 flex-1 w-full pr-4"
+                        />
                     </div>
                 </div>
                 <div
-                    class="text-xs mt-3"
-                    :class="
-                        pillarsSum === 100 ? 'text-green-400' : 'text-red-400'
-                    "
+                    class="bg-gray-800 rounded-xl p-4 border border-gray-700 h-full"
                 >
-                    Total: {{ pillarsSum }}%
+                    <div class="text-xs text-gray-400 mb-2">
+                        Topics & Keywords
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <div
+                            v-for="(t, i) in strategy.topics"
+                            :key="i"
+                            class="px-3 py-1 bg-gray-900 rounded-full text-xs flex items-center gap-2 border border-gray-700"
+                        >
+                            <span>{{ t }}</span>
+                            <button
+                                @click="removeTopic(i)"
+                                class="text-gray-400 hover:text-red-400"
+                            >
+                                <UIcon
+                                    name="i-heroicons-x-mark"
+                                    class="w-3 h-3"
+                                />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <UInput
+                            v-model="newTopic"
+                            placeholder="Add topic or keyword"
+                        />
+                        <UButton
+                            icon="i-heroicons-plus"
+                            @click="addTopicFromInput"
+                            :disabled="!newTopic.trim()"
+                            class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
+                        >
+                            Add
+                        </UButton>
+                    </div>
                 </div>
             </div>
 
             <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-xs text-gray-400 mb-2">Topics</div>
-                <div class="flex flex-wrap gap-2 mb-3">
+                <div class="text-xs text-gray-400 mb-2">Pillars</div>
+
+                <div class="grid grid-cols-1 gap-4">
                     <div
-                        v-for="(t, i) in strategy.topics"
-                        :key="i"
-                        class="px-2 py-1 bg-gray-700 rounded text-xs flex items-center gap-2"
+                        v-for="(val, key) in strategy.pillars"
+                        :key="key"
+                        class="flex items-center"
                     >
-                        <span>{{ t }}</span>
-                        <button
-                            @click="removeTopic(i)"
-                            class="text-gray-400 hover:text-red-400"
-                        >
-                            <UIcon name="i-heroicons-x-mark" class="w-3 h-3" />
-                        </button>
+                        <!-- Slider control replacing donut and numeric input -->
+                        <div class="flex-none w-full">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-xs text-gray-300 capitalize">
+                                    {{ formatPillarKey(key) }}
+                                </div>
+                                <div class="pillar-circle text-sm">
+                                    {{ strategy.pillars[key] }}%
+                                </div>
+                            </div>
+
+                            <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                v-model.number="strategy.pillars[key]"
+                                @input="
+                                    onPillarChange(key, strategy.pillars[key])
+                                "
+                                :style="{
+                                    '--range-percent':
+                                        (strategy.pillars[key] || 0) + '%',
+                                }"
+                                class="w-full"
+                            />
+                        </div>
                     </div>
-                </div>
-                <div class="flex gap-2">
-                    <UInput v-model="newTopic" placeholder="Add topic" />
-                    <UButton
-                        icon="i-heroicons-plus"
-                        @click="addTopicFromInput"
-                        :disabled="!newTopic.trim()"
-                        class="bg-gray-700 text-white hover:bg-gray-600 rounded"
-                    />
+
+                    <div
+                        :class="
+                            pillarsSum === 100
+                                ? 'text-green-400 text-xs mt-2'
+                                : 'text-red-400 text-xs mt-2'
+                        "
+                    >
+                        Total: {{ pillarsSum }}%
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Schedules per platform row -->
+        <!-- Schedules per platform (unchanged) -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                 <div class="flex items-center gap-3 mb-2">
@@ -240,106 +266,83 @@
             </div>
         </section>
 
-        <!-- Posts table block -->
+        <!-- Posts quick actions -->
         <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-white">Posts</h3>
+            <div class="flex items-center justify-between">
                 <div>
-                    <UButton
-                        v-if="posts.length === 0"
-                        @click="generatePosts"
-                        class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
-                        >Generate</UButton
-                    >
-                    <UButton
-                        v-else
-                        @click="generatePosts"
-                        class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
-                        >Re-Generate</UButton
-                    >
-                    <!--UButton
-                        v-else
-                        to="/posts"
-                        class="bg-gray-700 text-white hover:bg-gray-600 rounded"
-                        >Manage Posts</UButton
-                    -->
+                    <h3 class="text-lg font-medium text-white">Posts</h3>
+                    <p class="text-sm text-gray-400">
+                        Manage posts for the current strategy in the dedicated
+                        Posts feed.
+                    </p>
                 </div>
-            </div>
 
-            <div
-                v-if="posts.length === 0"
-                class="text-center py-12 text-gray-500"
-            >
-                <p>
-                    No posts yet for this month. Click Generate to create
-                    content.
-                </p>
-            </div>
-
-            <div v-else class="overflow-auto">
-                <table class="min-w-full text-sm">
-                    <thead>
-                        <tr class="text-xs text-gray-400 text-left">
-                            <th class="px-3 py-2">#</th>
-                            <th class="px-3 py-2">Platform</th>
-                            <th class="px-3 py-2">Scheduled</th>
-                            <th class="px-3 py-2">Status</th>
-                            <th class="px-3 py-2">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="(p, idx) in posts"
-                            :key="p._id"
-                            class="border-t border-gray-700"
-                        >
-                            <td class="px-3 py-2 text-gray-300">
-                                {{ idx + 1 }}
-                            </td>
-                            <td class="px-3 py-2 text-gray-200">
-                                {{ p.platform }}
-                            </td>
-                            <td class="px-3 py-2 text-gray-300">
-                                {{ formatDate(p.scheduledDate) }}
-                            </td>
-                            <td class="px-3 py-2 text-gray-300">
-                                {{ p.status }}
-                            </td>
-                            <td class="px-3 py-2">
-                                <UButton
-                                    size="sm"
-                                    @click="updatePostStatus(p, 'approved')"
-                                    class="bg-yellow-400 text-black hover:bg-yellow-300 rounded mr-2"
-                                    >Approve</UButton
-                                >
-                                <UButton
-                                    size="sm"
-                                    @click="previewPost(p)"
-                                    class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded"
-                                    >Preview</UButton
-                                >
-                                <UButton
-                                    size="sm"
-                                    @click="deletePost(p)"
-                                    class="bg-red-400 text-black hover:bg-red-700 rounded mr-2"
-                                    >Delete</UButton
-                                >
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="flex items-center gap-2">
+                    <UButton
+                        @click="
+                            () =>
+                                navigateTo(
+                                    `/posts?month=${strategy.month || customMonth}`,
+                                )
+                        "
+                        class="bg-gray-700 text-white hover:bg-gray-600 rounded"
+                        >Open Feed</UButton
+                    >
+                    <UButton
+                        @click="generatePosts"
+                        class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
+                        >Generate / Re-Generate</UButton
+                    >
+                </div>
             </div>
         </section>
     </div>
 </template>
 
 <script setup>
+import { ref, reactive, computed, watch, onMounted } from "vue";
+
 const n8n = useN8n();
+const router = useRouter();
+const route = useRoute();
+
+/**
+ * Small navigate helper used in templates.
+ * Uses router.push but swallows benign navigation errors (duplicate navigation).
+ */
+const navigateTo = (target) => {
+    try {
+        if (!target) return;
+        if (typeof target === "string") {
+            router.push(target).catch(() => {});
+        } else {
+            router.push(target).catch(() => {});
+        }
+    } catch (e) {
+        // noop on navigation issues
+    }
+};
+
+/**
+ * formatPillarKey helper used in template to transform keys like:
+ *  - "pillar_1" -> "1"
+ *  - "brand_awareness" -> "Brand awareness"
+ */
+const formatPillarKey = (k) => {
+    if (!k) return "";
+    const s = String(k)
+        .replace(/_/g, " ")
+        .replace(/\bpillar\b/gi, "")
+        .trim()
+        .replace(/\s+/g, " ");
+    return s.charAt(0).toUpperCase() + s.slice(1);
+};
 
 const currentDate = ref(new Date());
 const loadingStrategy = ref(false);
 const saving = ref(false);
 const generating = ref(false);
+
 const strategy = ref({
     theme: "",
     pillars: { pillar_1: 40, pillar_2: 30, pillar_3: 30 },
@@ -351,6 +354,9 @@ const strategy = ref({
     },
     posts: [],
 });
+
+// strategies list for month selection (fetched from backend)
+const strategiesList = ref([]);
 
 const daysOfWeek = [
     { label: "Mon", value: "Mon" },
@@ -368,11 +374,8 @@ const toggleDay = (platform, day) => {
     }
     const days = strategy.value.schedule[platform].days;
     const index = days.indexOf(day);
-    if (index > -1) {
-        days.splice(index, 1);
-    } else {
-        days.push(day);
-    }
+    if (index > -1) days.splice(index, 1);
+    else days.push(day);
 };
 
 const currentMonthStr = computed(() => {
@@ -381,15 +384,8 @@ const currentMonthStr = computed(() => {
     return `${year}-${month}`;
 });
 
-const currentMonthLabel = computed(() => {
-    return currentDate.value.toLocaleString("default", {
-        month: "long",
-        year: "numeric",
-    });
-});
-
 const monthOptions = computed(() => {
-    // last 12 months
+    // fallback last 12 months (used only if strategiesList unavailable)
     const arr = [];
     const now = new Date();
     for (let i = 0; i < 12; i++) {
@@ -406,14 +402,10 @@ const monthOptions = computed(() => {
     return arr;
 });
 
-const customMonth = ref(currentMonthStr.value);
+// selected month (string like "2025-07")
+const customMonth = ref("");
 
-watch(customMonth, (v) => {
-    // set the current month to custom selection and reload
-    currentDate.value = new Date(v + "-01");
-    loadStrategy();
-});
-
+// pillars sum helper
 const pillarsSum = computed(() => {
     if (!strategy.value?.pillars) return 0;
     return Object.values(strategy.value.pillars).reduce(
@@ -436,24 +428,68 @@ const posts = computed(() => strategy.value?.posts || []);
 const today = new Date();
 const actualCurrentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 
-const canGoPrev = computed(() => true);
+// helpers to navigate strategiesList
+const currentIndex = computed(() =>
+    strategiesList.value.findIndex((s) => s.month === customMonth.value),
+);
+const canGoPrev = computed(() => currentIndex.value > 0);
+const canGoNext = computed(
+    () =>
+        currentIndex.value >= 0 &&
+        currentIndex.value < strategiesList.value.length - 1,
+);
 
-const canGoNext = computed(() => {
-    if (
-        currentMonthStr.value >=
-        `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
-    ) {
-        return false;
+// load available strategies from backend
+const loadStrategiesList = async () => {
+    try {
+        const res = await n8n.getStrategies();
+        const arr = (res.data || []).map((r) => ({
+            month: r.month,
+            label: new Date(r.month + "-01").toLocaleString("default", {
+                month: "short",
+                year: "numeric",
+            }),
+            theme: r.theme || "",
+            postsCount: (r.posts || []).length || 0,
+        }));
+        strategiesList.value = arr;
+
+        // if route has ?month, prioritize it
+        if (route.query.month && typeof route.query.month === "string") {
+            customMonth.value = String(route.query.month);
+        } else if (!customMonth.value && strategiesList.value.length) {
+            // default to latest (first) if not set
+            customMonth.value = strategiesList.value[0].month;
+        } else if (
+            customMonth.value &&
+            !strategiesList.value.find((s) => s.month === customMonth.value)
+        ) {
+            // if selected month not in list, fall back to first
+            customMonth.value = strategiesList.value.length
+                ? strategiesList.value[0].month
+                : customMonth.value;
+        }
+    } catch (e) {
+        console.warn("Failed to load strategies list", e);
+        strategiesList.value = [];
+        if (!customMonth.value) customMonth.value = currentMonthStr.value;
     }
-    return true;
-});
+};
 
+// load strategy data for currently selected month
 const loadStrategy = async () => {
     loadingStrategy.value = true;
     try {
-        console.log("Fetching strategy for month:", currentMonthStr.value);
-        const res = await n8n.getStrategy(currentMonthStr.value);
+        const month = customMonth.value || currentMonthStr.value;
+        const res = await n8n.getStrategy({ month });
         strategy.value = res.data || strategy.value;
+        // ensure strategy has pillars structure
+        if (!strategy.value.pillars)
+            strategy.value.pillars = {
+                pillar_1: 40,
+                pillar_2: 30,
+                pillar_3: 30,
+            };
     } catch (e) {
         console.warn("Strategy not found", e);
     } finally {
@@ -461,6 +497,7 @@ const loadStrategy = async () => {
     }
 };
 
+// save helpers
 const saveStrategy = async () => {
     saving.value = true;
     try {
@@ -473,34 +510,11 @@ const saveStrategy = async () => {
     }
 };
 
-const updatePostStatus = async (post, status) => {
-    try {
-        const postId = post.platform + "-" + post.scheduledDate;
-        const res = await n8n.updatePostStatus(
-            strategy.value.month,
-            postId,
-            status,
-        );
-        strategy.value = res.data;
-    } catch (error) {
-        console.error("Failed to update post status:", error);
-    }
-};
-
-const deletePost = async (post) => {
-    try {
-        const postId = post.platform + "-" + post.scheduledDate;
-        const res = await n8n.deletePost(strategy.value.month, postId);
-        strategy.value = res.data;
-    } catch (error) {
-        console.error("Failed to update post status:", error);
-    }
-};
-
 const saveAndReload = async () => {
     saving.value = true;
     try {
-        // use POST /strategy to create/update and then reload
+        // ensure strategy.month matches selected month
+        strategy.value.month = customMonth.value || strategy.value.month;
         await n8n.saveStrategy(strategy.value);
         await loadStrategy();
     } catch (error) {
@@ -514,7 +528,8 @@ const generatePosts = async () => {
     await saveStrategy();
     generating.value = true;
     try {
-        await n8n.generateContent(strategy.value.month);
+        const month = customMonth.value || strategy.value.month;
+        await n8n.generateContent(month);
         await loadStrategy();
     } catch (error) {
         console.error("Failed to generate posts:", error);
@@ -523,19 +538,69 @@ const generatePosts = async () => {
     }
 };
 
+// normalization algorithm (unchanged logic)
+const normalizePillars = (changedKey) => {
+    const keys = Object.keys(strategy.value.pillars);
+    let total = keys.reduce((s, k) => s + (strategy.value.pillars[k] || 0), 0);
+
+    if (total === 100) return;
+
+    if (total === 0) {
+        const per = Math.floor(100 / keys.length);
+        keys.forEach((k) => (strategy.value.pillars[k] = per));
+        strategy.value.pillars[keys[0]] += 100 - per * keys.length;
+        return;
+    }
+
+    const diff = total - 100;
+    const others = keys.filter((k) => k !== changedKey);
+    const sumOthers = others.reduce(
+        (s, k) => s + (strategy.value.pillars[k] || 0),
+        0,
+    );
+
+    if (sumOthers === 0 && others.length > 0) {
+        const per = Math.round(diff / others.length);
+        others.forEach((k) => {
+            strategy.value.pillars[k] = Math.max(
+                0,
+                Math.min(100, (strategy.value.pillars[k] || 0) - per),
+            );
+        });
+    } else {
+        others.forEach((k) => {
+            const cur = strategy.value.pillars[k] || 0;
+            const change = Math.round((cur / Math.max(1, sumOthers)) * diff);
+            strategy.value.pillars[k] = Math.max(
+                0,
+                Math.min(100, cur - change),
+            );
+        });
+    }
+
+    const newTotal = keys.reduce(
+        (s, k) => s + (strategy.value.pillars[k] || 0),
+        0,
+    );
+    if (newTotal !== 100) {
+        const delta = 100 - newTotal;
+        strategy.value.pillars[changedKey] = Math.max(
+            0,
+            Math.min(100, (strategy.value.pillars[changedKey] || 0) + delta),
+        );
+    }
+};
+
+// when a slider changes
+const onPillarChange = (key, value) => {
+    strategy.value.pillars[key] = Math.max(
+        0,
+        Math.min(100, Number(value) || 0),
+    );
+    normalizePillars(key);
+};
+
 const newTopic = ref("");
-
-const incrementPillar = (key) => {
-    if (strategy.value.pillars[key] < 100) {
-        strategy.value.pillars[key]++;
-    }
-};
-
-const decrementPillar = (key) => {
-    if (strategy.value.pillars[key] > 0) {
-        strategy.value.pillars[key]--;
-    }
-};
 
 const addTopicFromInput = () => {
     if (newTopic.value.trim()) {
@@ -549,21 +614,21 @@ const removeTopic = (idx) => {
     strategy.value.topics.splice(idx, 1);
 };
 
+// navigate months via strategiesList
 const prevMonth = () => {
-    currentDate.value = new Date(
-        currentDate.value.setMonth(currentDate.value.getMonth() - 1),
-    );
-    loadStrategy();
+    if (!strategiesList.value.length) return;
+    const idx = currentIndex.value;
+    if (idx > 0) customMonth.value = strategiesList.value[idx - 1].month;
 };
 
 const nextMonth = () => {
-    if (!canGoNext.value) return;
-    currentDate.value = new Date(
-        currentDate.value.setMonth(currentDate.value.getMonth() + 1),
-    );
-    loadStrategy();
+    if (!strategiesList.value.length) return;
+    const idx = currentIndex.value;
+    if (idx >= 0 && idx < strategiesList.value.length - 1)
+        customMonth.value = strategiesList.value[idx + 1].month;
 };
 
+// small helpers for posts preview and colors (unchanged)
 const platformColor = (platform) => {
     const colors = {
         LinkedIn: "bg-blue-600 text-white",
@@ -615,7 +680,72 @@ const escapeHtml = (unsafe) => {
         .replace(/>/g, "&gt;");
 };
 
+// react to manual month changes: load strategy and update URL
+watch(
+    () => customMonth.value,
+    (v) => {
+        if (!v) return;
+        // update query param and load strategy
+        router.replace({ query: { ...route.query, month: v } }).catch(() => {});
+        loadStrategy();
+    },
+);
+
 onMounted(() => {
-    loadStrategy();
+    // load available strategies then load current strategy
+    loadStrategiesList().then(() => {
+        // if customMonth still empty, ensure we have a sensible default
+        if (!customMonth.value) {
+            customMonth.value = strategiesList.value.length
+                ? strategiesList.value[0].month
+                : currentMonthStr.value;
+        }
+        loadStrategy();
+    });
 });
 </script>
+
+<style scoped>
+/* Reuse pillar-circle styling from global CSS; fallback here if needed */
+.pillar-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.02),
+        rgba(0, 0, 0, 0.18)
+    );
+    border: 1px solid rgba(255, 213, 79, 0.08);
+    color: var(--nv-accent);
+    font-weight: 800;
+}
+
+/* Make range inputs look polished */
+input[type="range"] {
+    -webkit-appearance: none;
+    height: 8px;
+    background: linear-gradient(
+        90deg,
+        var(--nv-accent) 0%,
+        var(--nv-accent) var(--range-percent, 50%),
+        rgba(255, 255, 255, 0.04) var(--range-percent, 50%),
+        rgba(255, 255, 255, 0.04) 100%
+    );
+    border-radius: 999px;
+    outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 4px solid var(--nv-accent);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+}
+</style>
