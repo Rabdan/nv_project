@@ -81,12 +81,13 @@
                             </div>
                         </template>
 
-                        <div class="flex-1 h-52">
+                        <div class="flex-1">
                             <div
                                 class="text-sm text-white font-medium truncate h-32"
                             >
                                 <img
                                     :src="post.imageurl"
+                                    lazy
                                     alt="Post Image"
                                     class="object-contain w-full h-full"
                                 />
@@ -95,6 +96,11 @@
                                 class="text-xs text-gray-400 mt-2 line-clamp-4"
                             >
                                 {{ post.text || "Content not generated yet" }}
+                            </div>
+                            <div
+                                class="text-xs text-gray-400 mt-2 line-clamp-4"
+                            >
+                                {{ post.tags.join(", ") || "No tags" }}
                             </div>
                         </div>
 
@@ -280,6 +286,7 @@ const loadPostsForSelected = async (month) => {
             platform: p.platform || "Unknown",
             imageurl: p.imageurl || "",
             scheduledDate: p.scheduledDate || null,
+            tags: p.tags || [],
             status: p.status || "generated",
         }));
         console.log("Loaded posts for", month, posts.value);
