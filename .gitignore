@@ -6,4 +6,5 @@ coverage
 .vscode
 data
 backup
+uploads
 .env
