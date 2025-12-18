@@ -255,6 +255,9 @@ const loadStrategiesList = async () => {
         console.warn("Failed to load strategies", e);
         strategiesList.value = [];
     }
+    strategiesList.value = strategiesList.value.sort((a, b) =>
+        b.month.localeCompare(a.month),
+    );
     // default selected strategy: if route has ?month use it, otherwise latest available strategy (first item)
     if (route.query.month && typeof route.query.month === "string") {
         selectedStrategyMonth.value = String(route.query.month);
