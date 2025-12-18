@@ -279,6 +279,8 @@
 
                 <div class="flex items-center gap-2">
                     <UButton
+                        :loading="loadingStrategy || generating || saving"
+                        :disabled="loadingStrategy || generating || saving"
                         @click="
                             () =>
                                 navigateTo(
@@ -286,13 +288,17 @@
                                 )
                         "
                         class="bg-gray-700 text-white hover:bg-gray-600 rounded"
-                        >Open Feed</UButton
                     >
+                        Open Feed
+                    </UButton>
                     <UButton
+                        :loading="generating || loadingStrategy || saving"
+                        :disabled="generating || loadingStrategy || saving"
                         @click="generatePosts"
                         class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
-                        >Generate / Re-Generate</UButton
                     >
+                        Generate / Re-Generate
+                    </UButton>
                 </div>
             </div>
         </section>
