@@ -28,13 +28,44 @@ export const useN8n = () => {
     return cfg;
   });
 
-  // Response Interceptor for 401
+  // Response Interceptor for 401 and 400
   n8nApi.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response && error.response.status === 401) {
-        localStorage.removeItem("jwt_token");
-        router.push("/login");
+      // If there's a response attached, inspect the status and handle special cases
+      if (error && error.response) {
+        const status = error.response.status;
+        if (status === 401) {
+          // Unauthorized: clear token and force login
+          localStorage.removeItem("jwt_token");
+          router.push("/login");
+        } else if (status === 400) {
+          // Bad Request: redirect to the error page with details
+          try {
+            const message =
+              (error.response.data &&
+                (error.response.data.message || error.response.data.error)) ||
+              error.response.statusText ||
+              "Something went wrong";
+            const raw = JSON.stringify(error.response.data || {});
+            // encode values to be safe in query string
+            router
+              .push({
+                path: "/error",
+                query: {
+                  code: String(status),
+                  message: encodeURIComponent(String(message)),
+                  raw: encodeURIComponent(raw),
+                },
+              })
+              .catch(() => {});
+          } catch (e) {
+            // Fallback: still navigate to generic error page
+            router
+              .push({ path: "/error", query: { code: String(400) } })
+              .catch(() => {});
+          }
+        }
       }
       return Promise.reject(error);
     },

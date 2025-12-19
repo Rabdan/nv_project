@@ -1,271 +1,291 @@
 <template>
-    <div class="space-y-6">
-        <!-- Month selector + Theme block -->
-        <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-            <div class="flex items-center justify-between">
-                <div class="pr-5 gap-2">
-                    <h2 class="text-lg font-semibold text-white">
-                        Monthly Strategy & Planning
-                    </h2>
-                    <p class="text-sm text-gray-400">
-                        Select a month, edit the theme, pillars and topics — all
-                        in a single panel for quick planning.
-                    </p>
-                </div>
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="space-y-6">
+            <!-- Month selector + Theme block -->
+            <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                <div class="">
+                    <div class="pr-5 gap-2">
+                        <h2 class="text-lg font-semibold text-white">
+                            Monthly Strategy & Planning
+                        </h2>
+                        <p class="text-sm text-gray-400">
+                            Select a month, edit the theme, pillars and topics —
+                            all in a single panel for quick planning.
+                        </p>
+                    </div>
 
-                <div class="flex items-center gap-2">
-                    <UButton
-                        icon="i-heroicons-chevron-left"
-                        @click="nextMonth"
-                        :disabled="!canGoNext"
-                        size="sm"
-                        class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
-                    />
-
-                    <USelect
-                        v-model="customMonth"
-                        :items="strategiesList"
-                        placeholder="Select month"
-                        value-key="month"
-                        :ui="{ content: 'min-w-fit' }"
-                        class="w-52"
-                    >
-                        <template #item-label="{ item }">
-                            <div class="flex items-center gap-2">
-                                <div class="text-sm">{{ item.label }}</div>
-                                <div class="text-xs text-gray-400 truncate">
-                                    — {{ item.theme || "New strategy" }}
-                                </div>
-                            </div>
-                        </template>
-                    </USelect>
-
-                    <UButton
-                        icon="i-heroicons-chevron-right"
-                        @click="prevMonth"
-                        :disabled="!canGoPrev"
-                        size="sm"
-                        class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
-                    />
-
-                    <div class="ml-auto flex items-center gap-2 w-40 pl-4">
+                    <div class="flex items-center">
                         <UButton
-                            :loading="saving"
-                            @click="saveAndReload"
-                            class="bg-yellow-400 text-black hover:bg-yellow-300"
-                        >
-                            Save Strategy
-                        </UButton>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Theme / Pillars / Topics row -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="flex flex-col gap-4">
-                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                    <div class="text-xs text-gray-400">Theme</div>
-                    <div class="mt-2 text-sm text-gray-200">
-                        <UTextarea
-                            v-model="strategy.theme"
-                            placeholder="Enter the monthly theme..."
-                            :rows="3"
-                            class="ml-4 flex-1 w-full pr-4"
+                            icon="i-heroicons-chevron-left"
+                            @click="nextMonth"
+                            :disabled="!canGoNext"
+                            size="sm"
+                            class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
                         />
-                    </div>
-                </div>
-                <div
-                    class="bg-gray-800 rounded-xl p-4 border border-gray-700 h-full"
-                >
-                    <div class="text-xs text-gray-400 mb-2">
-                        Topics & Keywords
-                    </div>
 
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        <div
-                            v-for="(t, i) in strategy.topics"
-                            :key="i"
-                            class="px-3 py-1 bg-gray-900 rounded-full text-xs flex items-center gap-2 border border-gray-700"
+                        <USelect
+                            v-model="customMonth"
+                            :items="strategiesList"
+                            placeholder="Select month"
+                            value-key="month"
+                            :ui="{ content: 'min-w-fit' }"
+                            class="w-52"
                         >
-                            <span>{{ t }}</span>
-                            <button
-                                @click="removeTopic(i)"
-                                class="text-gray-400 hover:text-red-400"
+                            <template #item-label="{ item }">
+                                <div class="flex items-center gap-2">
+                                    <div class="text-sm">{{ item.label }}</div>
+                                    <div class="text-xs text-gray-400 truncate">
+                                        — {{ item.theme || "New strategy" }}
+                                    </div>
+                                </div>
+                            </template>
+                        </USelect>
+
+                        <UButton
+                            icon="i-heroicons-chevron-right"
+                            @click="prevMonth"
+                            :disabled="!canGoPrev"
+                            size="sm"
+                            class="bg-transparent text-gray-300 hover:bg-gray-700 hover:text-white rounded-md"
+                        />
+
+                        <div class="ml-auto flex items-center gap-2 w-40 pl-4">
+                            <UButton
+                                :loading="saving"
+                                @click="saveAndReload"
+                                class="bg-yellow-400 text-black hover:bg-yellow-300"
                             >
-                                <UIcon
-                                    name="i-heroicons-x-mark"
-                                    class="w-3 h-3"
-                                />
-                            </button>
+                                Save Strategy
+                            </UButton>
                         </div>
                     </div>
-
-                    <div class="flex gap-2">
-                        <UInput
-                            v-model="newTopic"
-                            placeholder="Add topic or keyword"
-                        />
-                        <UButton
-                            icon="i-heroicons-plus"
-                            @click="addTopicFromInput"
-                            :disabled="!newTopic.trim()"
-                            class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
-                        >
-                            Add
-                        </UButton>
-                    </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="text-xs text-gray-400 mb-2">Pillars</div>
-
-                <div class="grid grid-cols-1 gap-4">
+            <!-- Theme / Pillars / Topics row -->
+            <section class="grid grid-cols-1 gap-4">
+                <div class="flex flex-col gap-4">
                     <div
-                        v-for="(val, key) in strategy.pillars"
-                        :key="key"
-                        class="flex items-center"
+                        class="bg-gray-800 rounded-xl p-4 border border-gray-700"
                     >
-                        <!-- Slider control replacing donut and numeric input -->
-                        <div class="flex-none w-full">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="text-xs text-gray-300 capitalize">
-                                    {{ formatPillarKey(key) }}
-                                </div>
-                                <div class="pillar-circle text-sm">
-                                    {{ strategy.pillars[key] }}%
-                                </div>
-                            </div>
-
-                            <input
-                                type="range"
-                                min="0"
-                                max="100"
-                                v-model.number="strategy.pillars[key]"
-                                @input="
-                                    onPillarChange(key, strategy.pillars[key])
-                                "
-                                :style="{
-                                    '--range-percent':
-                                        (strategy.pillars[key] || 0) + '%',
-                                }"
-                                class="w-full"
+                        <div class="text-xs text-gray-400">Theme</div>
+                        <div class="mt-2 text-sm text-gray-200">
+                            <UTextarea
+                                v-model="strategy.theme"
+                                placeholder="Enter the monthly theme..."
+                                :rows="3"
+                                class="ml-4 flex-1 w-full pr-4"
                             />
                         </div>
                     </div>
-
                     <div
-                        :class="
-                            pillarsSum === 100
-                                ? 'text-green-400 text-xs mt-2'
-                                : 'text-red-400 text-xs mt-2'
-                        "
+                        class="bg-gray-800 rounded-xl p-4 border border-gray-700 h-full"
                     >
-                        Total: {{ pillarsSum }}%
+                        <div class="text-xs text-gray-400 mb-2">
+                            Topics & Keywords
+                        </div>
+
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <div
+                                v-for="(t, i) in strategy.topics"
+                                :key="i"
+                                class="px-3 py-1 bg-gray-900 rounded-full text-xs flex items-center gap-2 border border-gray-700"
+                            >
+                                <span>{{ t }}</span>
+                                <button
+                                    @click="removeTopic(i)"
+                                    class="text-gray-400 hover:text-red-400"
+                                >
+                                    <UIcon
+                                        name="i-heroicons-x-mark"
+                                        class="w-3 h-3"
+                                    />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <UInput
+                                v-model="newTopic"
+                                placeholder="Add topic or keyword"
+                            />
+                            <UButton
+                                icon="i-heroicons-plus"
+                                @click="addTopicFromInput"
+                                :disabled="!newTopic.trim()"
+                                class="bg-yellow-400 text-black hover:bg-yellow-300 rounded"
+                            >
+                                Add
+                            </UButton>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- Schedules per platform (unchanged) -->
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="text-sm text-white font-semibold">LinkedIn</div>
-                    <UInput
-                        v-model="strategy.schedule.linkedin.time"
-                        type="time"
-                        class="w-32"
-                    />
-                    <UInput
-                        v-model="strategy.schedule.linkedin.timezone"
-                        placeholder="Timezone"
-                        class="w-36"
-                    />
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <UButton
-                        v-for="day in daysOfWeek"
-                        :key="'li-' + day.value"
-                        size="sm"
-                        :class="
-                            strategy.schedule.linkedin.days.includes(day.value)
-                                ? 'bg-yellow-400 text-black rounded-md'
-                                : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
-                        "
-                        @click="toggleDay('linkedin', day.value)"
-                    >
-                        {{ day.label }}
-                    </UButton>
-                </div>
-            </div>
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="text-xs text-gray-400 mb-2">Pillars</div>
 
-            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="text-sm text-white font-semibold">
-                        Instagram
+                    <div class="grid grid-cols-1 gap-4">
+                        <div
+                            v-for="(val, key) in strategy.pillars"
+                            :key="key"
+                            class="flex items-center"
+                        >
+                            <!-- Slider control replacing donut and numeric input -->
+                            <div class="flex-none w-full">
+                                <div
+                                    class="flex items-center justify-between mb-2 h-2"
+                                >
+                                    <div
+                                        class="text-xs text-gray-300 capitalize"
+                                    >
+                                        {{ formatPillarKey(key) }}
+                                    </div>
+                                    <div class="pillar-circle text-sm">
+                                        {{ strategy.pillars[key] }}%
+                                    </div>
+                                </div>
+
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    v-model.number="strategy.pillars[key]"
+                                    @input="
+                                        onPillarChange(
+                                            key,
+                                            strategy.pillars[key],
+                                        )
+                                    "
+                                    :style="{
+                                        '--range-percent':
+                                            (strategy.pillars[key] || 0) + '%',
+                                    }"
+                                    class="w-full"
+                                />
+                            </div>
+                        </div>
+
+                        <div
+                            :class="
+                                pillarsSum === 100
+                                    ? 'text-green-400 text-xs mt-2'
+                                    : 'text-red-400 text-xs mt-2'
+                            "
+                        >
+                            Total: {{ pillarsSum }}%
+                        </div>
                     </div>
-                    <UInput
-                        v-model="strategy.schedule.instagram.time"
-                        type="time"
-                        class="w-32"
-                    />
-                    <UInput
-                        v-model="strategy.schedule.instagram.timezone"
-                        placeholder="Timezone"
-                        class="w-36"
-                    />
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <UButton
-                        v-for="day in daysOfWeek"
-                        :key="'ig-' + day.value"
-                        size="sm"
-                        :class="
-                            strategy.schedule.instagram.days.includes(day.value)
-                                ? 'bg-yellow-400 text-black rounded-md'
-                                : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
-                        "
-                        @click="toggleDay('instagram', day.value)"
-                    >
-                        {{ day.label }}
-                    </UButton>
-                </div>
-            </div>
+            </section>
 
-            <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div class="flex items-center gap-3 mb-2">
-                    <div class="text-sm text-white font-semibold">Facebook</div>
-                    <UInput
-                        v-model="strategy.schedule.facebook.time"
-                        type="time"
-                        class="w-32"
-                    />
-                    <UInput
-                        v-model="strategy.schedule.facebook.timezone"
-                        placeholder="Timezone"
-                        class="w-36"
-                    />
+            <!-- Schedules per platform (unchanged) -->
+            <section class="grid grid-cols-1 gap-4">
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="text-sm text-white font-semibold">
+                            LinkedIn
+                        </div>
+                        <UInput
+                            v-model="strategy.schedule.linkedin.time"
+                            type="time"
+                            class="w-32"
+                        />
+                        <UInput
+                            v-model="strategy.schedule.linkedin.timezone"
+                            placeholder="Timezone"
+                            class="w-36"
+                        />
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <UButton
+                            v-for="day in daysOfWeek"
+                            :key="'li-' + day.value"
+                            size="sm"
+                            :class="
+                                strategy.schedule.linkedin.days.includes(
+                                    day.value,
+                                )
+                                    ? 'bg-yellow-400 text-black rounded-md'
+                                    : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
+                            "
+                            @click="toggleDay('linkedin', day.value)"
+                        >
+                            {{ day.label }}
+                        </UButton>
+                    </div>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <UButton
-                        v-for="day in daysOfWeek"
-                        :key="'fb-' + day.value"
-                        size="sm"
-                        :class="
-                            strategy.schedule.facebook.days.includes(day.value)
-                                ? 'bg-yellow-400 text-black rounded-md'
-                                : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
-                        "
-                        @click="toggleDay('facebook', day.value)"
-                    >
-                        {{ day.label }}
-                    </UButton>
-                </div>
-            </div>
-        </section>
 
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="text-sm text-white font-semibold">
+                            Instagram
+                        </div>
+                        <UInput
+                            v-model="strategy.schedule.instagram.time"
+                            type="time"
+                            class="w-32"
+                        />
+                        <UInput
+                            v-model="strategy.schedule.instagram.timezone"
+                            placeholder="Timezone"
+                            class="w-36"
+                        />
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <UButton
+                            v-for="day in daysOfWeek"
+                            :key="'ig-' + day.value"
+                            size="sm"
+                            :class="
+                                strategy.schedule.instagram.days.includes(
+                                    day.value,
+                                )
+                                    ? 'bg-yellow-400 text-black rounded-md'
+                                    : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
+                            "
+                            @click="toggleDay('instagram', day.value)"
+                        >
+                            {{ day.label }}
+                        </UButton>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="text-sm text-white font-semibold">
+                            Facebook
+                        </div>
+                        <UInput
+                            v-model="strategy.schedule.facebook.time"
+                            type="time"
+                            class="w-32"
+                        />
+                        <UInput
+                            v-model="strategy.schedule.facebook.timezone"
+                            placeholder="Timezone"
+                            class="w-36"
+                        />
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <UButton
+                            v-for="day in daysOfWeek"
+                            :key="'fb-' + day.value"
+                            size="sm"
+                            :class="
+                                strategy.schedule.facebook.days.includes(
+                                    day.value,
+                                )
+                                    ? 'bg-yellow-400 text-black rounded-md'
+                                    : 'border border-gray-600 text-gray-200 bg-transparent rounded-md hover:bg-gray-700 hover:text-white'
+                            "
+                            @click="toggleDay('facebook', day.value)"
+                        >
+                            {{ day.label }}
+                        </UButton>
+                    </div>
+                </div>
+            </section>
+        </div>
         <!-- Posts quick actions -->
         <section class="bg-gray-800 rounded-xl p-4 border border-gray-700">
             <div class="flex items-center justify-between">
@@ -301,16 +321,80 @@
                     </UButton>
                 </div>
             </div>
+            <UTable :data="tablePosts" :columns="columns" class="flex-1" />
         </section>
-    </div>
+    </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from "vue";
 
 const n8n = useN8n();
 const router = useRouter();
 const route = useRoute();
+
+const UBadge = resolveComponent("UBadge");
+
+type Post = {
+    platform: string;
+    scheduledDate: string;
+    status: "pending" | "approved" | "published";
+    text: string;
+};
+
+const columns: TableColumn<Post>[] = [
+    {
+        accessorKey: "platform",
+        header: "#",
+        cell: ({ row }) => `#${row.getValue("platform")}`,
+    },
+    {
+        accessorKey: "scheduledDate",
+        header: "Date",
+        cell: ({ row }) => {
+            const datestring = row.getValue("scheduledDate") as string;
+            if (!datestring) {
+                return "—"; // Или пустая строка ""
+            }
+            return new Date(datestring.trim()).toLocaleString("en-US", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+            });
+        },
+    },
+    {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+            const color = {
+                approved: "success" as const,
+                pending: "error" as const,
+                published: "neutral" as const,
+            }[row.getValue("status") as string];
+
+            return h(
+                UBadge,
+                { class: "capitalize", variant: "subtle", color },
+                () => row.getValue("status"),
+            );
+        },
+    },
+    {
+        accessorKey: "text",
+        header: "Text",
+        cell: ({ row }) => {
+            const textstring = row.getValue("text") as string;
+            if (!textstring) {
+                return "—"; // Или пустая строка ""
+            }
+
+            return textstring.slice(0, 10) + "...";
+        },
+    },
+];
 
 /**
  * Small navigate helper used in templates.
@@ -350,19 +434,59 @@ const saving = ref(false);
 const generating = ref(false);
 
 const strategy = ref({
-    theme: "",
-    pillars: { pillar_1: 40, pillar_2: 30, pillar_3: 30 },
-    topics: [],
+    theme: "New theme",
+    pillars: {
+        education: 40,
+        success_stories: 30,
+        thought_leadership: 20,
+        clinic_updates: 10,
+    },
+    topics: ["concussion recovery", "post-trauma vision", "therapy benefits"],
     schedule: {
-        linkedin: { time: "", timezone: "", days: [] },
-        instagram: { time: "", timezone: "", days: [] },
-        facebook: { time: "", timezone: "", days: [] },
+        linkedin: {
+            frequency: 2,
+            days: ["Mon", "Fri"],
+            time: "09:00",
+            timezone: "America/New_York",
+        },
+        instagram: {
+            frequency: 2,
+            days: ["Tue", "Thu"],
+            time: "12:00",
+            timezone: "America/New_York",
+        },
+        facebook: {
+            frequency: 2,
+            days: ["Wed", "Sat"],
+            time: "10:00",
+            timezone: "America/New_York",
+        },
     },
     posts: [],
+    status: "new",
 });
 
 // strategies list for month selection (fetched from backend)
 const strategiesList = ref([]);
+// tablePosts is computed from the currently loaded strategy (strategy.value.posts)
+// and shaped to match the table columns (platform, scheduleDate, status, content, etc.)
+const tablePosts = computed(() =>
+    (strategy.value?.posts || []).map((p) => ({
+        _id:
+            p._id ||
+            (p.platform
+                ? p.platform + "-" + (p.scheduledDate || Math.random())
+                : Math.random()),
+        platform: p.platform || "Unknown",
+        // normalize various possible date keys
+        scheduledDate:
+            p.scheduledDate || p.scheduled_date || p.scheduledAt || null,
+        status: p.status || "generated",
+        text: p.text || p.content || "",
+        imageurl: p.imageurl || "",
+        tags: p.tags || [],
+    })),
+);
 
 const daysOfWeek = [
     { label: "Mon", value: "Mon" },
@@ -428,8 +552,6 @@ const isStrategyComplete = computed(() => {
         strategy.value.topics?.length > 0
     );
 });
-
-const posts = computed(() => strategy.value?.posts || []);
 
 // helpers to navigate strategiesList
 const currentIndex = computed(() =>
@@ -505,13 +627,17 @@ const loadStrategy = async () => {
         const month = customMonth.value || currentMonthStr.value;
         const res = await n8n.getStrategy({ month });
         strategy.value = res.data || strategy.value;
-        // ensure strategy has pillars structure
-        if (!strategy.value.pillars)
-            strategy.value.pillars = {
-                pillar_1: 40,
-                pillar_2: 30,
-                pillar_3: 30,
-            };
+        posts.value = (strategy.value.posts || []).map((p) => ({
+            _id: p.platform + "-" + p.scheduledDate,
+            imageurl: p.imageurl || "",
+            text: p.text || "",
+            platform: p.platform || "Unknown",
+            imageurl: p.imageurl || "",
+            scheduledDate: p.scheduledDate || null,
+            tags: p.tags || [],
+            status: p.status || "generated",
+        }));
+        console.log(strategy.value.posts);
     } catch (e) {
         console.warn("Strategy not found", e);
     } finally {
