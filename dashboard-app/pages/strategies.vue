@@ -183,6 +183,9 @@
                 <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                     <div class="flex items-center gap-3 mb-2">
                         <div class="text-sm text-white font-semibold">
+                            <span class="text-xs text-gray-400 mb-2"
+                                >schedule for</span
+                            >
                             LinkedIn
                         </div>
                         <UInput
@@ -218,6 +221,9 @@
                 <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                     <div class="flex items-center gap-3 mb-2">
                         <div class="text-sm text-white font-semibold">
+                            <span class="text-xs text-gray-400 mb-2"
+                                >schedule for</span
+                            >
                             Instagram
                         </div>
                         <UInput
@@ -253,6 +259,9 @@
                 <div class="bg-gray-800 rounded-xl p-4 border border-gray-700">
                     <div class="flex items-center gap-3 mb-2">
                         <div class="text-sm text-white font-semibold">
+                            <span class="text-xs text-gray-400 mb-2"
+                                >schedule for</span
+                            >
                             Facebook
                         </div>
                         <UInput
